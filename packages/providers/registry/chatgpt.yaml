@@ -1,0 +1,28 @@
+id: chatgpt-pro
+name: ChatGPT
+company: OpenAI
+url: https://chatgpt.com
+category: think
+subcategory: general
+integration_method: browser
+capabilities:
+  - reasoning
+  - coding
+  - writing
+  - canvas
+  - dalle
+  - code_interpreter
+  - vision
+  - web_browsing
+supported_languages: ["en", "fr", "de", "es", "ja", "ko", "zh", "ar", "pt", "it"]
+tiers:
+  - name: Free
+    limits: "GPT-4o, limited messages per day"
+  - name: Plus
+    limits: "More messages, GPT-4o priority"
+  - name: Pro
+    limits: "Unlimited, o1 pro mode"
+priority: 2
+enabled: true
+affiliate:
+  has_existing_program: false

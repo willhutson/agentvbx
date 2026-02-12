@@ -1,0 +1,62 @@
+name: "Voice Project Update"
+description: "Send a voice note, update your project board automatically"
+trigger:
+  type: voice_note
+  channel: whatsapp
+steps:
+  - name: "Transcribe"
+    agent: transcriber
+    provider: auto
+    input: voice_note
+    output: transcript
+
+  - name: "Extract fields"
+    agent: field_mapper
+    provider: ollama/qwen2.5
+    input: transcript
+    context:
+      integration: monday
+      schema: auto_detect
+    output: structured_fields
+
+  - name: "Confirm with user"
+    channel: whatsapp
+    action: send_confirmation
+    input: structured_fields
+    gate: human_approval
+    output: confirmed_fields
+
+  - name: "Update board"
+    type: integration_write
+    integration: monday
+    action: update_item
+    input: confirmed_fields
+    output: update_result
+
+  - name: "Notify"
+    type: notification
+    channel: whatsapp
+    input: update_result
+    params:
+      message: "Monday.com updated: {item_name} -> {changes_summary}"
+
+marketplace:
+  id: recipe-voice-project-update-v1
+  creator: agentvbx
+  title: "Voice Project Update"
+  description: "Send a voice note describing your project update, and your Monday.com / Airtable / Linear board updates automatically."
+  category: productivity
+  tags:
+    - voice
+    - project_management
+    - monday.com
+    - automation
+  version: "1.0"
+  required_tools:
+    - ollama
+  optional_tools:
+    - monday
+    - airtable
+    - linear
+  pricing:
+    type: free

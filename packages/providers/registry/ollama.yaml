@@ -1,0 +1,43 @@
+id: ollama
+name: Ollama
+company: Ollama
+url: http://localhost:11434
+category: think
+subcategory: local
+integration_method: local
+capabilities:
+  - reasoning
+  - coding
+  - writing
+  - embeddings
+  - classification
+  - routing
+  - transcription
+supported_languages: ["en", "zh", "ar", "fr", "de", "es", "ja", "ko"]
+tiers:
+  - name: Free
+    limits: "Unlimited — runs locally, no cost"
+priority: 10
+enabled: true
+affiliate:
+  has_existing_program: false
+metadata:
+  models:
+    - name: qwen2.5:72b
+      size: 40GB
+      best_for: "Multilingual — Arabic, CJK. Coding."
+    - name: qwen2.5:7b
+      size: 4GB
+      best_for: "Light routing, MENA Arabic. Telnyx Voice AI LLM endpoint."
+    - name: llama3.3:70b
+      size: 40GB
+      best_for: "Best local general purpose"
+    - name: llama3.1:8b
+      size: 4.5GB
+      best_for: "Fast routing, classification"
+    - name: nomic-embed-text
+      size: 274MB
+      best_for: "Local embeddings for vector search"
+    - name: whisper-large-v3
+      size: 1.5GB
+      best_for: "Local transcription — free, private, offline"

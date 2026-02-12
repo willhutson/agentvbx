@@ -1,0 +1,21 @@
+id: deepseek
+name: DeepSeek
+company: DeepSeek
+url: https://chat.deepseek.com
+category: think
+subcategory: reasoning
+integration_method: browser
+capabilities:
+  - reasoning
+  - coding
+  - writing
+  - chain_of_thought
+  - math
+supported_languages: ["en", "zh"]
+tiers:
+  - name: Free
+    limits: "Completely free, no limits"
+priority: 3
+enabled: true
+affiliate:
+  has_existing_program: false

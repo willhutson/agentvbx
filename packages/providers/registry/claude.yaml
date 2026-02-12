@@ -1,0 +1,27 @@
+id: claude-max
+name: Claude Max
+company: Anthropic
+url: https://claude.ai
+category: think
+subcategory: reasoning
+integration_method: browser
+capabilities:
+  - reasoning
+  - coding
+  - writing
+  - analysis
+  - artifacts
+  - projects
+  - vision
+supported_languages: ["en", "fr", "de", "es", "ja", "ko", "zh", "ar"]
+tiers:
+  - name: Free
+    limits: "Limited Sonnet messages per day"
+  - name: Pro
+    limits: "5x more usage, Opus access"
+  - name: Max
+    limits: "20x more usage, extended thinking"
+priority: 1
+enabled: true
+affiliate:
+  has_existing_program: false

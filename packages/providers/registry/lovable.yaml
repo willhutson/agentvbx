@@ -1,0 +1,23 @@
+id: lovable
+name: Lovable
+company: Lovable
+url: https://lovable.dev
+category: build
+subcategory: web_development
+integration_method: browser
+capabilities:
+  - full_stack_apps
+  - landing_pages
+  - react_apps
+  - supabase_backend
+  - deployment
+supported_languages: ["en"]
+tiers:
+  - name: Free
+    limits: "5 projects"
+  - name: Pro
+    limits: "Unlimited projects, custom domains"
+priority: 1
+enabled: true
+affiliate:
+  has_existing_program: false

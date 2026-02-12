@@ -1,0 +1,29 @@
+id: elevenlabs
+name: ElevenLabs
+company: ElevenLabs
+url: https://elevenlabs.io
+category: talk
+subcategory: voice_synthesis
+integration_method: api
+capabilities:
+  - text_to_speech
+  - voice_cloning
+  - voice_design
+  - multilingual_tts
+  - audio_dubbing
+supported_languages: ["en", "fr", "de", "es", "it", "pt", "ja", "ko", "zh", "ar", "hi", "pl"]
+tiers:
+  - name: Free
+    limits: "10K characters/month"
+  - name: Starter
+    limits: "30K characters/month"
+  - name: Creator
+    limits: "100K characters/month"
+  - name: Pro
+    limits: "500K characters/month"
+priority: 1
+enabled: true
+affiliate:
+  program_url: https://elevenlabs.io/affiliates
+  commission_type: recurring
+  has_existing_program: true

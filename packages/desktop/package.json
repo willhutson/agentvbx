@@ -1,0 +1,10 @@
+{
+  "name": "@agentvbx/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AGENTVBX desktop application (Tauri v2)",
+  "scripts": {
+    "dev": "echo 'Run: cd src-tauri && cargo tauri dev'",
+    "build": "echo 'Run: cd src-tauri && cargo tauri build'"
+  }
+}

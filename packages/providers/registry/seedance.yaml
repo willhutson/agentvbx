@@ -1,0 +1,22 @@
+id: seedance
+name: Seedance
+company: ByteDance
+url: https://seedance.ai
+category: create
+subcategory: video_generation
+integration_method: browser
+capabilities:
+  - text_to_video
+  - image_to_video
+  - audio_sync
+  - multi_modal_input
+supported_languages: ["en", "zh"]
+tiers:
+  - name: Free
+    limits: "Limited generations"
+  - name: Pro
+    limits: "2K output, priority generation"
+priority: 2
+enabled: true
+affiliate:
+  has_existing_program: false

@@ -1,0 +1,81 @@
+name: "Monday Morning Briefing"
+description: "Automated weekly briefing from email, calendar, and project data"
+trigger:
+  type: schedule
+  cron: "0 7 * * 1"
+steps:
+  - name: "Gather email context"
+    agent: researcher
+    type: integration_read
+    integration: gmail
+    action: read_recent
+    params:
+      query: "is:important newer_than:7d"
+      max_results: 20
+    input: trigger
+    output: email_summary
+
+  - name: "Check this week's calendar"
+    agent: scheduler
+    type: integration_read
+    integration: gcal
+    action: list_events
+    params:
+      time_range: "this_week"
+    input: trigger
+    output: week_schedule
+
+  - name: "Pull project updates"
+    agent: researcher
+    type: integration_read
+    integration: linear
+    action: read_updates
+    params:
+      team: "all"
+      since: "7d"
+    input: trigger
+    output: project_status
+
+  - name: "Write the briefing"
+    agent: writer
+    provider: claude-max
+    input:
+      - email_summary
+      - week_schedule
+      - project_status
+    output: briefing_doc
+
+  - name: "Create Google Doc"
+    type: artifact_delivery
+    input: briefing_doc
+    params:
+      destination: google_drive
+      title: "Weekly Briefing — {date}"
+      folder: "Briefings"
+      convert_to: google_docs
+      notify:
+        - whatsapp
+      include_thumbnail: true
+      message: "Your Monday briefing is ready"
+
+marketplace:
+  id: recipe-monday-briefing-v1
+  creator: agentvbx
+  title: "Monday Morning Briefing"
+  description: "Automated weekly briefing compiled from email, calendar, and project data. Delivered as a Google Doc to your WhatsApp."
+  category: productivity
+  tags:
+    - weekly_report
+    - briefing
+    - email
+    - calendar
+    - automation
+  version: "1.0"
+  required_tools:
+    - claude-max
+  optional_tools:
+    - gmail
+    - gcal
+    - linear
+  pricing:
+    type: free

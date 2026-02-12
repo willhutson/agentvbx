@@ -1,0 +1,72 @@
+name: "Deep Research Report"
+description: "Comprehensive research on any topic with citations, delivered as a structured document"
+trigger:
+  type: manual
+  channel: whatsapp
+steps:
+  - name: "Initial web research"
+    agent: researcher
+    provider: perplexity
+    input: user_query
+    output: web_findings
+
+  - name: "Deep semantic search"
+    agent: researcher
+    provider: claude-max
+    input: web_findings
+    context:
+      tools:
+        - exa
+        - firecrawl
+    output: deep_findings
+
+  - name: "Check local knowledge"
+    agent: researcher
+    provider: ollama/qwen2.5
+    input: user_query
+    context:
+      data_sources:
+        - obsidian
+        - local_files
+    output: local_findings
+
+  - name: "Synthesize report"
+    agent: writer
+    provider: claude-max
+    input:
+      - web_findings
+      - deep_findings
+      - local_findings
+    output: report_doc
+
+  - name: "Deliver report"
+    type: artifact_delivery
+    input: report_doc
+    params:
+      destination: google_drive
+      title: "Research Report — {topic}"
+      folder: "Research"
+      notify:
+        - whatsapp
+      include_thumbnail: true
+
+marketplace:
+  id: recipe-deep-research-v1
+  creator: agentvbx
+  title: "Deep Research Report"
+  description: "Multi-source research with web search, semantic discovery, and local knowledge synthesis. Delivered as a structured, cited document."
+  category: research
+  tags:
+    - research
+    - report
+    - citations
+    - analysis
+  version: "1.0"
+  required_tools:
+    - claude-max
+    - perplexity
+  optional_tools:
+    - exa
+    - firecrawl
+  pricing:
+    type: free
