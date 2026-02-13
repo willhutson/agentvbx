@@ -1,9 +1,11 @@
 name: Scheduler
 description: "Calendar management, meeting scheduling, and voice call coordination"
+# Scheduling is lightweight — free/local models first, sessions as upgrade.
 provider_priority:
   - ollama/qwen2.5
-  - chatgpt-pro
-  - claude-max
+  - deepseek
+  - session:chatgpt
+  - session:claude
 tools:
   - gcal
   - gmail

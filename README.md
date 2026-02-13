@@ -26,7 +26,7 @@ git clone https://github.com/willhutson/agentvbx.git
 cd agentvbx
 npm install
 npm run build
-npm test              # 64 tests passing
+npm test              # 138 tests passing
 
 # Start the API server
 npm run dev
@@ -67,12 +67,12 @@ agentvbx/
 │   ├── voice/             # Telnyx Voice AI, SMS, transcription
 │   ├── agent-browser/     # Playwright BYOA — task runner, health monitor, re-auth
 │   ├── integrations/      # Google Drive, Monday.com, Notion, GitHub, Meta Ads
-│   └── mobile/            # Progressive Web App (PWA)
+│   ├── mobile/            # Progressive Web App (PWA)
+│   └── desktop/           # Tauri v2 desktop app (17-view SPA)
 ├── config/
 │   ├── agents/            # 7 agent blueprints (YAML)
 │   └── recipes/           # Workflow templates (YAML)
 ├── recipes/               # 6 community/example recipes
-├── packages/desktop/      # Tauri v2 desktop app
 ├── .github/workflows/     # CI/CD pipeline
 ├── Dockerfile             # Multi-stage production build
 ├── docker-compose.yml     # API + Redis + Ollama
@@ -91,6 +91,7 @@ agentvbx/
 | **agent-browser** | Playwright persistent contexts for BYOA (Bring Your Own Account). Task runner with provider-specific UI scripts. Health monitoring with re-auth flows. Supports ChatGPT, Claude, Gemini, Perplexity, Midjourney, Lovable. |
 | **integrations** | Unified `IntegrationAdapter` interface. Google Drive (OAuth2, file ops, sharing). Monday.com (GraphQL, board/item CRUD). Notion (pages, databases). GitHub (repos, files, issues, commits). Meta Ads (campaigns, audiences, lead forms, webhooks). |
 | **mobile** | Progressive Web App with service worker, offline support, push notifications. 4-tab layout: Dashboard, Chat, Recipes, Settings. |
+| **desktop** | Tauri v2 native desktop app with 17-view SPA. Role-based UI (User/Builder/Admin). Setup wizard, provider priority drag-and-drop, visual recipe editor, artifact management, admin analytics, marketplace moderation. Rust backend for filesystem, Obsidian vault discovery, session storage, content hashing. |
 
 ## Agents
 
@@ -250,6 +251,39 @@ PUT  /api/whitelabel/:tenantId                Set white-label config
 WS   /ws                                      Real-time event stream
 ```
 
+## Desktop App
+
+The Tauri v2 desktop app (`packages/desktop/`) is the zero-infrastructure hub for AGENTVBX. It runs as a native app on macOS, Windows, and Linux.
+
+### Role-Based Views
+
+| Role | Views | Purpose |
+|------|-------|---------|
+| **User** | Setup, Dashboard, Providers, Files, Artifacts, Recipes, Marketplace, Settings | Day-to-day usage: connect providers, browse files, run recipes, manage artifacts |
+| **Builder** | My Recipes, Recipe Editor, Published | Create and publish recipes with a visual drag-and-drop editor |
+| **Admin** | Dashboard, System Health, Tenants, Analytics, Revenue, Moderation | Platform management: tenant CRUD, health monitoring, usage analytics, marketplace moderation |
+
+### Key Features
+
+- **Setup Wizard** — 4-step onboarding: Connect AI providers, file stores, WhatsApp
+- **Provider Priority Chain** — Drag-and-drop to reorder the provider fallback chain
+- **Visual Recipe Editor** — 3-column layout: step palette, canvas with connectors, config panel. Supports all 5 step types (agent, integration_read, integration_write, artifact_delivery, notification)
+- **Context Menus** — Right-click on providers, recipes, artifacts, tenants for contextual actions
+- **Tauri IPC Bridge** — Rust backend provides filesystem access, Obsidian vault discovery, session storage, content hashing. Falls back to REST API when running in browser.
+
+### Desktop Rust Commands
+
+| Command | Description |
+|---------|-------------|
+| `get_health` | App health + platform info |
+| `list_directory` | Browse filesystem (hidden files filtered) |
+| `read_text_file` | Read file content (10MB limit) |
+| `hash_file` | SHA-256 hash for artifact versioning |
+| `get_user_directories` | Home, Desktop, Documents, Downloads paths |
+| `discover_obsidian_vaults` | Scan for `.obsidian` directories (max depth 4) |
+| `get_provider_login_config` | Login URL + success indicators for BYOA providers |
+| `ensure_session_dir` | Create session storage directory per tenant/provider |
+
 ## Transcription Tiers
 
 | Tier | Engine | Features |
@@ -264,7 +298,7 @@ WS   /ws                                      Real-time event stream
 ```bash
 npm install              # Install all workspace dependencies
 npm run build            # Build all packages
-npm test                 # Run all 64 tests (Vitest)
+npm test                 # Run all 138 tests (Vitest)
 npm run dev              # Start API server in dev mode
 npm run dev:orchestrator # Start orchestrator in dev mode
 npm run clean            # Remove all dist/ directories
@@ -274,7 +308,7 @@ npm run clean            # Remove all dist/ directories
 
 - **Config**: YAML files in `config/agents/` and `config/recipes/`
 - **Types**: `packages/orchestrator/src/types.ts` — all core interfaces
-- **Tests**: Vitest, 64 tests across 8 suites
+- **Tests**: Vitest, 138 tests across orchestrator and providers
 - **Logging**: Pino structured JSON logging
 - **Queue**: Redis Streams with consumer groups (at-least-once delivery)
 - **CI/CD**: GitHub Actions (lint → test → build → Docker push to GHCR)
@@ -288,6 +322,7 @@ npm run clean            # Remove all dist/ directories
 - [x] Phase 5: Browser BYOA automation, session health, re-auth flows
 - [x] Phase 6: Recipe marketplace, multi-tenant at scale, CI/CD, Docker
 - [x] Phase 7: Mobile PWA, Meta Ads funnel, analytics, white-label
+- [x] Phase 8: Desktop app — Tauri v2 with session adapters, file stores, visual recipe builder, admin panel
 
 ## License
 

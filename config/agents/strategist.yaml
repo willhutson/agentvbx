@@ -1,8 +1,9 @@
 name: Strategist
 description: "Business strategy, planning, and decision analysis"
+# Strategy needs strong reasoning — Claude and ChatGPT sessions preferred.
 provider_priority:
-  - claude-max
-  - chatgpt-pro
+  - session:claude
+  - session:chatgpt
   - deepseek
 tools:
   - exa

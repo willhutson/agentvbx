@@ -4,7 +4,7 @@
 
 ## Architecture
 
-Monorepo (npm workspaces, Node 20+) with 8 packages:
+Monorepo (npm workspaces, Node 20+) with 9 packages:
 
 | Package | Purpose |
 |---------|---------|
@@ -16,12 +16,12 @@ Monorepo (npm workspaces, Node 20+) with 8 packages:
 | `packages/agent-browser` | Playwright browser sessions for BYOA provider automation, task runner, health monitoring, re-auth flows |
 | `packages/integrations` | Platform adapters — Google Drive, Monday.com, Notion, GitHub, Meta Ads |
 | `packages/mobile` | Progressive Web App — mobile-first dashboard, chat, push notifications |
+| `packages/desktop` | Tauri v2 desktop app — 17-view SPA with role-based UI (User/Builder/Admin), visual recipe editor, provider priority drag-and-drop, admin analytics, Rust backend for filesystem/Obsidian/sessions |
 
 Supporting directories:
 - `config/agents/` — Agent blueprint YAML files (7 agents)
 - `config/recipes/` — Recipe workflow YAML files
 - `recipes/` — Community/example recipes (6 recipes)
-- `packages/desktop/` — Tauri v2 desktop app (HTML + Rust)
 
 ## Message Flow
 
@@ -55,7 +55,7 @@ All in `packages/orchestrator/src/types.ts`:
 
 ### Testing
 - Vitest for all packages
-- 64 tests across orchestrator (config, routing, recipes, marketplace, rate-limiter, analytics) and providers (registry, genie)
+- 138 tests across orchestrator (config, routing, recipes, marketplace, rate-limiter, analytics) and providers (registry, genie)
 - Run: `npm test` (all workspaces) or `npm test --workspace=packages/orchestrator`
 
 ### Config Files
@@ -168,6 +168,48 @@ The agent-browser package automates AI provider web UIs:
 - Push notification support via Web Push API
 - 4-tab layout: Dashboard, Chat, Recipes, Settings
 
+## Desktop App (Phase 8)
+
+- `packages/desktop/` — Tauri v2 native app (HTML + Rust)
+- Single-page app with hash-based routing, 17 views, zero JS dependencies
+- Role-based UI: User (8 views), Builder (3 views), Admin (5 views)
+- Design system: dark theme with CSS custom properties (white-label ready)
+
+### User Panel
+- Setup wizard (4-step onboarding: Connect AI → Files → WhatsApp → Ready)
+- Dashboard with provider strip, stat cards, activity feed, artifact alerts
+- Provider priority chain (drag-to-reorder, context menus)
+- File stores browser (local, Obsidian, Google Drive)
+- Artifacts table with status tracking and version history
+- Installed recipes with run actions, marketplace browser
+
+### Recipe Builder
+- 3-column editor: step palette (5 types) → visual canvas with connectors → config panel
+- Drag step types from palette to canvas, drag to reorder on canvas
+- Config panel adapts to step type (agent, integration, artifact, notification)
+- Save, test, and publish to marketplace
+
+### Admin Panel
+- Tenant management (CRUD, tier badges, status filters)
+- System health dashboard (6 services + Redis queue stats)
+- Usage analytics with CSS-only bar charts (provider usage, cost breakdown)
+- Revenue dashboard (MRR, marketplace, affiliate, ARPU)
+- Marketplace moderation queue (approve/reject)
+
+### Rust Backend (Tauri IPC)
+- `list_directory` / `read_text_file` — filesystem access
+- `discover_obsidian_vaults` — scan for `.obsidian` dirs (max depth 4)
+- `hash_file` — SHA-256 for artifact versioning
+- `get_provider_login_config` — BYOA login URLs + success indicators
+- `ensure_session_dir` — per-tenant/provider session storage
+
+### Interactive Features
+- Context menus: provider, recipe, artifact, tenant
+- Drag-and-drop: provider reorder, recipe step builder
+- Modal dialogs: send message, create tenant, confirmations
+- Toast notifications: action feedback
+- API bridge: Tauri IPC with REST API fallback
+
 ## Recipe Step Types
 
 | Type | Handler | Description |
@@ -205,7 +247,7 @@ API_KEY=... (optional, for admin API auth)
 ```bash
 npm install          # Install all workspace deps
 npm run build        # Build all packages
-npm test             # Run all tests (64 tests)
+npm test             # Run all tests (138 tests)
 npm run dev          # Start API server (dev mode)
 npm run clean        # Clean dist/ directories
 ```
@@ -216,4 +258,12 @@ npm run clean        # Clean dist/ directories
 docker compose up -d                    # Start API + Redis
 docker compose --profile gpu up -d      # Start with GPU Ollama
 docker compose --profile cpu up -d      # Start with CPU Ollama
+```
+
+### Desktop (Tauri v2)
+
+```bash
+cd packages/desktop/src-tauri
+cargo tauri dev                         # Dev mode with hot reload
+cargo tauri build                       # Production build
 ```

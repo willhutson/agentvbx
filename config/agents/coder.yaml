@@ -1,9 +1,11 @@
 name: Coder
 description: "Software development agent — writes, reviews, and debugs code"
+# Coding benefits from Claude's reasoning and DeepSeek's cost efficiency.
+# Session adapter uses existing Claude Pro subscription at flat rate.
 provider_priority:
-  - anthropic
+  - session:claude
+  - session:chatgpt
   - deepseek
-  - openai
   - ollama/qwen2.5-coder
 tools:
   - think
