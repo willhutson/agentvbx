@@ -23,3 +23,6 @@ export type {
 
 export { createWebhookRouter } from './webhook-handler.js';
 export type { TelnyxWebhookEvent, WebhookHandler } from './webhook-handler.js';
+
+export { VoiceBridge } from './bridge.js';
+export type { VoiceBridgeConfig } from './bridge.js';

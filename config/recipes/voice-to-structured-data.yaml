@@ -1,0 +1,70 @@
+name: voice-to-structured-data
+description: >
+  Transcribe a voice note, extract structured fields using an LLM,
+  confirm with the user, then push to Monday.com (or another integration).
+  The killer recipe that demonstrates the full pipeline.
+
+trigger:
+  type: voice_note
+  channel: whatsapp
+
+steps:
+  - name: transcribe
+    type: agent
+    agent: researcher
+    provider: ollama
+    input: voice_audio
+    output: transcript
+    params:
+      instruction: >
+        Transcribe and clean up this voice note. Fix filler words,
+        correct grammar, but preserve the speaker's intent and key details.
+        Return only the cleaned transcript.
+
+  - name: extract_fields
+    type: agent
+    agent: researcher
+    provider: ollama
+    input: transcript
+    output: structured_data
+    params:
+      instruction: >
+        Extract structured data from this transcript. Return a JSON object with:
+        - title: short descriptive title
+        - priority: high/medium/low
+        - assignee: person mentioned or "unassigned"
+        - due_date: date mentioned or null
+        - description: detailed summary
+        - action_items: array of action items
+        Only return valid JSON, no markdown.
+
+  - name: confirm_data
+    type: agent
+    agent: assistant
+    input: structured_data
+    output: confirmed_data
+    gate: human_approval
+    params:
+      instruction: >
+        Format this structured data nicely for the user to review.
+        Present it clearly and ask if they want to proceed with
+        creating the task.
+
+  - name: push_to_monday
+    type: integration_write
+    integration: monday
+    action: create
+    input: confirmed_data
+    output: monday_result
+    params:
+      name: "{title}"
+
+  - name: notify_user
+    type: notification
+    channel: whatsapp
+    input: monday_result
+    output: notification_result
+    params:
+      template: >
+        Your voice note has been processed and added to Monday.com.
+        Task: {input}

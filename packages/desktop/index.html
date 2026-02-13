@@ -6,123 +6,122 @@
   <title>AGENTVBX</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0a0a0a; --surface: #111; --card: #151515; --border: #222;
+      --text: #e0e0e0; --muted: #888; --dim: #555;
+      --accent: #6c7aff; --accent-bg: #1a1a2e;
+      --green: #4ade80; --green-bg: #0a2a0a;
+      --yellow: #facc15; --yellow-bg: #2a2a0a;
+      --red: #f87171; --red-bg: #2a0a0a;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0a0a;
-      color: #e0e0e0;
-      min-height: 100vh;
+      background: var(--bg); color: var(--text); min-height: 100vh;
     }
     .app { display: flex; height: 100vh; }
+
+    /* ── Sidebar ── */
     .sidebar {
-      width: 260px;
-      background: #111;
-      border-right: 1px solid #222;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
+      width: 240px; background: var(--surface); border-right: 1px solid var(--border);
+      padding: 16px; display: flex; flex-direction: column; flex-shrink: 0;
     }
-    .sidebar h1 {
-      font-size: 18px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 4px;
-      letter-spacing: -0.5px;
-    }
-    .sidebar .subtitle {
-      font-size: 11px;
-      color: #666;
-      margin-bottom: 24px;
-    }
-    .nav-section {
-      margin-bottom: 20px;
-    }
+    .sidebar h1 { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+    .sidebar .version { font-size: 10px; color: var(--dim); margin-bottom: 20px; }
+    .nav-section { margin-bottom: 16px; }
     .nav-section h3 {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #555;
-      margin-bottom: 8px;
+      font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px;
+      color: var(--dim); margin-bottom: 6px; padding: 0 8px;
     }
     .nav-item {
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      color: #999;
-      transition: all 0.15s;
+      padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;
+      color: var(--muted); transition: all 0.1s; display: flex; align-items: center; gap: 8px;
     }
     .nav-item:hover { background: #1a1a1a; color: #fff; }
-    .nav-item.active { background: #1a1a2e; color: #6c7aff; }
-    .main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
+    .nav-item.active { background: var(--accent-bg); color: var(--accent); }
+    .nav-count {
+      font-size: 10px; background: var(--border); padding: 1px 5px;
+      border-radius: 8px; margin-left: auto; font-variant-numeric: tabular-nums;
     }
+    .sidebar-footer { margin-top: auto; font-size: 10px; color: var(--dim); padding: 8px; }
+
+    /* ── Main ── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .header {
-      padding: 16px 24px;
-      border-bottom: 1px solid #222;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 12px 20px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
     }
-    .header h2 { font-size: 16px; font-weight: 600; }
+    .header h2 { font-size: 14px; font-weight: 600; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
     .status-badge {
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 500;
+      padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 500;
     }
-    .status-badge.healthy { background: #0a2a0a; color: #4ade80; }
-    .status-badge.degraded { background: #2a2a0a; color: #facc15; }
-    .content { flex: 1; padding: 24px; overflow-y: auto; }
+    .status-badge.healthy { background: var(--green-bg); color: var(--green); }
+    .status-badge.degraded { background: var(--yellow-bg); color: var(--yellow); }
+    .status-badge.unhealthy { background: var(--red-bg); color: var(--red); }
+    .ws-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--red); }
+    .ws-indicator.connected { background: var(--green); }
+
+    .content { flex: 1; padding: 16px 20px; overflow-y: auto; }
+
+    /* ── Cards ── */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
     .card {
-      background: #151515;
-      border: 1px solid #222;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 12px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 14px;
     }
-    .card h4 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
-    .card p { font-size: 12px; color: #888; line-height: 1.5; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-    .stat {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 0;
-      font-size: 12px;
-    }
-    .stat-label { color: #888; }
+    .card h4 { font-size: 11px; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+    .card p { font-size: 11px; color: var(--dim); line-height: 1.5; }
+    .stat { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
+    .stat-label { color: var(--muted); }
     .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .stat-value.voice { color: var(--red); }
+    .stat-value.chat { color: var(--accent); }
+
+    /* ── Agent/Adapter Pills ── */
+    .pill-list { display: flex; flex-wrap: wrap; gap: 4px; }
+    .pill {
+      font-size: 10px; padding: 2px 8px; border-radius: 10px;
+      background: var(--accent-bg); color: var(--accent); border: 1px solid #2a2a4e;
+    }
+    .pill.adapter { background: #1a2a1a; color: var(--green); border-color: #1a3a1a; }
+
+    /* ── Activity Feed ── */
+    .feed { max-height: 300px; overflow-y: auto; }
+    .feed-item {
+      padding: 6px 0; border-bottom: 1px solid #1a1a1a; font-size: 11px;
+      display: flex; gap: 8px; align-items: baseline;
+    }
+    .feed-time { color: var(--dim); font-variant-numeric: tabular-nums; flex-shrink: 0; width: 55px; }
+    .feed-event { color: var(--muted); }
+    .feed-event .agent { color: var(--accent); }
+    .feed-event .provider { color: var(--green); }
+
+    /* ── Full-width card ── */
+    .card.full { grid-column: 1 / -1; }
   </style>
 </head>
 <body>
   <div class="app">
     <div class="sidebar">
       <h1>AGENTVBX</h1>
-      <div class="subtitle">Orchestration Layer</div>
+      <div class="version">v0.2.0 — Phase 2-4</div>
 
       <div class="nav-section">
-        <h3>Dashboard</h3>
+        <h3>System</h3>
         <div class="nav-item active">Overview</div>
-        <div class="nav-item">Queue Status</div>
+        <div class="nav-item">Queue <span class="nav-count" id="nav-queue">0</span></div>
       </div>
 
       <div class="nav-section">
         <h3>Agents</h3>
-        <div class="nav-item">Active Agents</div>
-        <div class="nav-item">Blueprints</div>
-      </div>
-
-      <div class="nav-section">
-        <h3>Recipes</h3>
-        <div class="nav-item">My Recipes</div>
+        <div class="nav-item">Blueprints <span class="nav-count" id="nav-agents">0</span></div>
+        <div class="nav-item">Recipes</div>
         <div class="nav-item">Executions</div>
       </div>
 
       <div class="nav-section">
         <h3>Providers</h3>
-        <div class="nav-item">Sessions</div>
+        <div class="nav-item">Adapters <span class="nav-count" id="nav-adapters">0</span></div>
+        <div class="nav-item">Browser Sessions</div>
         <div class="nav-item">Registry</div>
       </div>
 
@@ -130,26 +129,42 @@
         <h3>Channels</h3>
         <div class="nav-item">WhatsApp</div>
         <div class="nav-item">Voice / Phone</div>
+        <div class="nav-item">SMS</div>
+      </div>
+
+      <div class="nav-section">
+        <h3>Integrations</h3>
+        <div class="nav-item">Google Drive</div>
+        <div class="nav-item">Monday.com</div>
+        <div class="nav-item">Notion</div>
+        <div class="nav-item">GitHub</div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div id="ws-status">WebSocket: disconnected</div>
       </div>
     </div>
 
     <div class="main">
       <div class="header">
         <h2>System Overview</h2>
-        <div class="status-badge healthy" id="status-badge">Healthy</div>
+        <div class="header-right">
+          <div class="ws-indicator" id="ws-dot"></div>
+          <div class="status-badge degraded" id="status-badge">Starting</div>
+        </div>
       </div>
 
       <div class="content">
         <div class="grid">
           <div class="card">
-            <h4>Queue Stats</h4>
+            <h4>Queue</h4>
             <div class="stat">
               <span class="stat-label">Voice (priority)</span>
-              <span class="stat-value" id="queue-voice">0</span>
+              <span class="stat-value voice" id="queue-voice">0</span>
             </div>
             <div class="stat">
               <span class="stat-label">Chat</span>
-              <span class="stat-value" id="queue-chat">0</span>
+              <span class="stat-value chat" id="queue-chat">0</span>
             </div>
             <div class="stat">
               <span class="stat-label">Background</span>
@@ -158,18 +173,41 @@
           </div>
 
           <div class="card">
-            <h4>Active Agents</h4>
-            <p id="agents-list">No agents registered yet. Add agent blueprints to get started.</p>
+            <h4>System</h4>
+            <div class="stat">
+              <span class="stat-label">Uptime</span>
+              <span class="stat-value" id="sys-uptime">-</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Memory</span>
+              <span class="stat-value" id="sys-memory">-</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">WS Clients</span>
+              <span class="stat-value" id="sys-ws">0</span>
+            </div>
           </div>
 
           <div class="card">
-            <h4>Provider Sessions</h4>
-            <p id="sessions-list">No active browser sessions. Connect a provider to begin.</p>
+            <h4>Agents</h4>
+            <div class="pill-list" id="agents-list"></div>
+            <p id="agents-empty">No agents registered</p>
           </div>
 
           <div class="card">
-            <h4>Recent Activity</h4>
-            <p>Waiting for first message...</p>
+            <h4>Provider Adapters</h4>
+            <div class="pill-list" id="adapters-list"></div>
+            <p id="adapters-empty">No adapters connected</p>
+          </div>
+
+          <div class="card full">
+            <h4>Activity Feed</h4>
+            <div class="feed" id="feed">
+              <div class="feed-item">
+                <span class="feed-time">--:--</span>
+                <span class="feed-event">Waiting for events...</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -177,30 +215,103 @@
   </div>
 
   <script>
-    // Health check polling — calls Tauri backend or REST API
-    async function checkHealth() {
+    const API_BASE = window.location.origin;
+    const WS_URL = `ws://${window.location.host}/ws`;
+    let ws = null;
+    let feedItems = [];
+    const MAX_FEED = 100;
+
+    function connectWS() {
       try {
-        if (window.__TAURI__) {
-          const { invoke } = window.__TAURI__.core;
-          const health = await invoke('get_health');
-          updateUI(health);
+        ws = new WebSocket(WS_URL);
+        ws.onopen = () => {
+          document.getElementById('ws-dot').classList.add('connected');
+          document.getElementById('ws-status').textContent = 'WebSocket: connected';
+        };
+        ws.onclose = () => {
+          document.getElementById('ws-dot').classList.remove('connected');
+          document.getElementById('ws-status').textContent = 'WebSocket: disconnected';
+          setTimeout(connectWS, 3000);
+        };
+        ws.onmessage = (e) => {
+          try {
+            const event = JSON.parse(e.data);
+            handleWSEvent(event);
+          } catch {}
+        };
+      } catch { setTimeout(connectWS, 3000); }
+    }
+
+    function handleWSEvent(event) {
+      if (event.type === 'health') updateHealth(event.data);
+      addFeedItem(event.type, event.data);
+    }
+
+    async function fetchHealth() {
+      try {
+        const res = await fetch(`${API_BASE}/api/health`);
+        if (res.ok) updateHealth(await res.json());
+      } catch {}
+    }
+
+    async function fetchSystem() {
+      try {
+        const res = await fetch(`${API_BASE}/api/system`);
+        if (res.ok) {
+          const sys = await res.json();
+          document.getElementById('sys-uptime').textContent = formatUptime(sys.uptime);
+          document.getElementById('sys-memory').textContent = formatBytes(sys.memory?.rss ?? 0);
+          document.getElementById('sys-ws').textContent = sys.ws_clients ?? 0;
         }
-      } catch (e) {
-        console.log('Health check unavailable:', e);
-      }
+      } catch {}
     }
 
-    function updateUI(health) {
+    function updateHealth(h) {
       const badge = document.getElementById('status-badge');
-      if (badge) {
-        badge.textContent = health.status || 'Unknown';
-        badge.className = 'status-badge ' + (health.status || 'degraded');
+      const s = h.status || 'unknown';
+      badge.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+      badge.className = 'status-badge ' + (s === 'healthy' ? 'healthy' : s === 'degraded' ? 'degraded' : 'unhealthy');
+
+      if (h.queue) {
+        document.getElementById('queue-voice').textContent = h.queue.voice ?? 0;
+        document.getElementById('queue-chat').textContent = h.queue.chat ?? 0;
+        document.getElementById('queue-background').textContent = h.queue.background ?? 0;
+        document.getElementById('nav-queue').textContent = (h.queue.voice??0)+(h.queue.chat??0)+(h.queue.background??0);
+      }
+      if (h.agents) {
+        const el = document.getElementById('agents-list');
+        const em = document.getElementById('agents-empty');
+        if (h.agents.length) { em.style.display='none'; el.innerHTML=h.agents.map(a=>`<span class="pill">${a}</span>`).join(''); document.getElementById('nav-agents').textContent=h.agents.length; }
+        else { em.style.display='block'; el.innerHTML=''; }
+      }
+      if (h.adapters) {
+        const el = document.getElementById('adapters-list');
+        const em = document.getElementById('adapters-empty');
+        if (h.adapters.length) { em.style.display='none'; el.innerHTML=h.adapters.map(a=>`<span class="pill adapter">${a}</span>`).join(''); document.getElementById('nav-adapters').textContent=h.adapters.length; }
+        else { em.style.display='block'; el.innerHTML=''; }
       }
     }
 
-    // Poll health every 5 seconds
-    setInterval(checkHealth, 5000);
-    checkHealth();
+    function addFeedItem(type, data) {
+      const time = new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit'});
+      let text = type;
+      if (type==='message:routed' && data?.decision) text=`Routed to <span class="agent">${data.decision.agent}</span> via <span class="provider">${data.decision.provider}</span>`;
+      else if (type==='message:completed' && data) text=`<span class="agent">${data.agent}</span> responded via <span class="provider">${data.provider}</span> (${data.latency_ms}ms)`;
+      else if (type==='message:failed' && data) text=`<span class="agent">${data.agent}</span> failed: ${data.error||'unknown'}`;
+      else if (type==='tenant:created' && data) text=`Tenant created: ${data.name||data.id}`;
+      else if (type==='recipe:started' && data) text=`Recipe started: ${data.recipe}`;
+      else if (type==='message:queued' && data) text=`Message queued: ${data.queueId}`;
+      feedItems.unshift({time,text});
+      if (feedItems.length>MAX_FEED) feedItems=feedItems.slice(0,MAX_FEED);
+      document.getElementById('feed').innerHTML=feedItems.map(i=>`<div class="feed-item"><span class="feed-time">${i.time}</span><span class="feed-event">${i.text}</span></div>`).join('');
+    }
+
+    function formatUptime(s) { if(!s) return '-'; return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${Math.floor(s%60)}s`; }
+    function formatBytes(b) { if(!b) return '-'; return `${(b/1024/1024).toFixed(1)} MB`; }
+
+    connectWS(); fetchHealth(); fetchSystem();
+    setInterval(fetchHealth, 5000);
+    setInterval(fetchSystem, 10000);
   </script>
 </body>
 </html>

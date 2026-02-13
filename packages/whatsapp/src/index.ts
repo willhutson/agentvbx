@@ -12,3 +12,6 @@ export type {
   Broadcast,
   BroadcastResult,
 } from './house-channel.js';
+
+export { WhatsAppBridge } from './bridge.js';
+export type { WhatsAppBridgeConfig } from './bridge.js';

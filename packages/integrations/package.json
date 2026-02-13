@@ -1,0 +1,26 @@
+{
+  "name": "@agentvbx/integrations",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Platform integrations — Google Workspace, Monday.com, Notion, GitHub",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "pino": "^9.6.0",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "tsx": "^4.19.2",
+    "vitest": "^3.0.4",
+    "@types/node": "^22.12.0",
+    "@types/uuid": "^10.0.0"
+  }
+}

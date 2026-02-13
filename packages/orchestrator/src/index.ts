@@ -8,7 +8,14 @@
 
 // Main orchestrator
 export { Orchestrator } from './orchestrator.js';
-export type { OrchestratorConfig } from './orchestrator.js';
+export type {
+  OrchestratorConfig,
+  AdapterManagerLike,
+  IntegrationManagerLike,
+  ChannelSender,
+  MessageEventHandler,
+  MessageResult,
+} from './orchestrator.js';
 
 // Queue
 export { RedisStreams } from './queue/index.js';
@@ -28,6 +35,16 @@ export type {
   ConfirmationHandler,
   NotificationHandler,
 } from './recipe/index.js';
+
+// Step handlers
+export { AgentStepHandler } from './handlers/index.js';
+export { IntegrationReadHandler, IntegrationWriteHandler } from './handlers/index.js';
+export { NotificationStepHandler } from './handlers/index.js';
+
+// Artifacts
+export { ArtifactManager } from './artifacts/index.js';
+export { ArtifactDeliveryHandler } from './artifacts/index.js';
+export type { ArtifactInput, CloudUploader, ArtifactNotifier } from './artifacts/index.js';
 
 // Tenant management
 export { TenantManager } from './tenant/index.js';
