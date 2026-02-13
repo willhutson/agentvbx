@@ -1,8 +1,9 @@
 name: Creative Director
 description: "Visual and creative direction — images, videos, presentations, design briefs"
+# Creative work benefits from ChatGPT's DALL-E access and Claude's nuance.
 provider_priority:
-  - chatgpt-pro
-  - claude-max
+  - session:chatgpt
+  - session:claude
   - deepseek
 tools:
   - midjourney

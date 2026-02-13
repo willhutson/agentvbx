@@ -178,13 +178,40 @@ export class OllamaAdapter implements ProviderAdapter {
   }
 }
 
+// ─── Provider Gap (Demand Driver) ───────────────────────────────────────────
+
+/**
+ * Represents a provider a user needs but doesn't have connected.
+ * This is the demand driver — when a recipe or fallback chain requires a
+ * provider the user hasn't set up, this surfaces the signup opportunity.
+ */
+export interface ProviderGap {
+  /** The provider ID that was needed (e.g., 'session:claude'). */
+  provider_id: string;
+  /** Why it was needed. */
+  reason: 'recipe_requirement' | 'fallback_exhausted' | 'preferred_unavailable';
+  /** Signup URL (with affiliate tracking). */
+  signup_url?: string;
+  /** The fallback provider that was used instead (if any). */
+  fell_back_to?: string;
+}
+
+export type GapEventHandler = (gap: ProviderGap) => void;
+
 // ─── Adapter Manager ────────────────────────────────────────────────────────
 
 /**
  * Manages all provider adapters and handles fallback between them.
+ *
+ * Extended with provider gap detection for the demand driver layer:
+ * when a session-based provider is unavailable (user hasn't connected it),
+ * the gap is recorded and surfaced to the UI so the user can sign up
+ * via affiliate link or connect their existing subscription.
  */
 export class AdapterManager {
   private adapters: Map<string, ProviderAdapter> = new Map();
+  private gapHandlers: GapEventHandler[] = [];
+  private recentGaps: ProviderGap[] = [];
 
   /**
    * Register a provider adapter.
@@ -202,18 +229,91 @@ export class AdapterManager {
   }
 
   /**
+   * Subscribe to provider gap events (for demand driver / affiliate hooks).
+   */
+  onProviderGap(handler: GapEventHandler): void {
+    this.gapHandlers.push(handler);
+  }
+
+  /**
+   * Get recent provider gaps (for UI display).
+   */
+  getRecentGaps(): ProviderGap[] {
+    return [...this.recentGaps];
+  }
+
+  /**
+   * Clear recorded gaps (e.g., after user connects a provider).
+   */
+  clearGaps(): void {
+    this.recentGaps = [];
+  }
+
+  /**
+   * Check which providers from a list are missing / unavailable.
+   * Used by marketplace to show "this recipe needs X" before install.
+   */
+  async detectGaps(requiredProviders: string[]): Promise<ProviderGap[]> {
+    const gaps: ProviderGap[] = [];
+
+    for (const providerId of requiredProviders) {
+      const adapter = this.adapters.get(providerId);
+
+      if (!adapter) {
+        gaps.push({
+          provider_id: providerId,
+          reason: 'recipe_requirement',
+          signup_url: this.getSignupUrl(providerId),
+        });
+        continue;
+      }
+
+      try {
+        const available = await adapter.isAvailable();
+        if (!available) {
+          gaps.push({
+            provider_id: providerId,
+            reason: 'recipe_requirement',
+            signup_url: this.getSignupUrl(providerId),
+          });
+        }
+      } catch {
+        gaps.push({
+          provider_id: providerId,
+          reason: 'recipe_requirement',
+          signup_url: this.getSignupUrl(providerId),
+        });
+      }
+    }
+
+    return gaps;
+  }
+
+  /**
    * Send a request to a provider with automatic fallback.
    * Tries each provider in the priority list until one succeeds.
+   * Records provider gaps when session-based providers are unavailable.
    */
   async sendWithFallback(
     request: AdapterRequest,
     providerPriority: string[],
-  ): Promise<AdapterResponse & { fallbacks_tried: string[] }> {
+  ): Promise<AdapterResponse & { fallbacks_tried: string[]; provider_gaps: ProviderGap[] }> {
     const tried: string[] = [];
+    const gaps: ProviderGap[] = [];
 
     for (const providerId of providerPriority) {
       const adapter = this.adapters.get(providerId);
       if (!adapter) {
+        // Provider not registered at all — record as gap if it's a session provider
+        if (providerId.startsWith('session:')) {
+          const gap: ProviderGap = {
+            provider_id: providerId,
+            reason: 'preferred_unavailable',
+            signup_url: this.getSignupUrl(providerId),
+          };
+          gaps.push(gap);
+          this.recordGap(gap);
+        }
         logger.debug({ providerId }, 'Adapter not found, skipping');
         continue;
       }
@@ -222,15 +322,48 @@ export class AdapterManager {
         const available = await adapter.isAvailable();
         if (!available) {
           tried.push(providerId);
+
+          // Record gap for session providers (user needs to log in or sign up)
+          if (providerId.startsWith('session:')) {
+            const gap: ProviderGap = {
+              provider_id: providerId,
+              reason: 'preferred_unavailable',
+              signup_url: this.getSignupUrl(providerId),
+            };
+            gaps.push(gap);
+            this.recordGap(gap);
+          }
+
           logger.info({ providerId }, 'Provider unavailable, trying next');
           continue;
         }
 
         const response = await adapter.send(request);
-        return { ...response, fallbacks_tried: tried };
+
+        // If we had gaps, note what we fell back to
+        for (const gap of gaps) {
+          gap.fell_back_to = providerId;
+        }
+
+        return { ...response, fallbacks_tried: tried, provider_gaps: gaps };
       } catch (err) {
         tried.push(providerId);
         logger.warn({ err, providerId }, 'Provider failed, trying next');
+      }
+    }
+
+    // All failed — record the entire chain as exhausted
+    if (gaps.length === 0) {
+      for (const providerId of providerPriority) {
+        if (providerId.startsWith('session:')) {
+          const gap: ProviderGap = {
+            provider_id: providerId,
+            reason: 'fallback_exhausted',
+            signup_url: this.getSignupUrl(providerId),
+          };
+          gaps.push(gap);
+          this.recordGap(gap);
+        }
       }
     }
 
@@ -268,5 +401,42 @@ export class AdapterManager {
    */
   listAdapters(): string[] {
     return Array.from(this.adapters.keys());
+  }
+
+  /**
+   * Get all session-based adapter IDs (connected subscriptions).
+   */
+  listSessionAdapters(): string[] {
+    return Array.from(this.adapters.keys()).filter((id) => id.startsWith('session:'));
+  }
+
+  // ─── Internal ─────────────────────────────────────────────────────────
+
+  private recordGap(gap: ProviderGap): void {
+    // Dedupe by provider_id
+    if (!this.recentGaps.some((g) => g.provider_id === gap.provider_id)) {
+      this.recentGaps.push(gap);
+    }
+
+    for (const handler of this.gapHandlers) {
+      try {
+        handler(gap);
+      } catch (err) {
+        logger.error({ err }, 'Gap event handler error');
+      }
+    }
+  }
+
+  /**
+   * Map provider IDs to signup URLs with affiliate tracking.
+   */
+  private getSignupUrl(providerId: string): string | undefined {
+    const signupUrls: Record<string, string> = {
+      'session:chatgpt': 'https://chatgpt.com/#pricing',
+      'session:claude': 'https://claude.ai/upgrade',
+      'session:gemini': 'https://one.google.com/about/ai-premium',
+      'session:perplexity': 'https://perplexity.ai/pro',
+    };
+    return signupUrls[providerId];
   }
 }

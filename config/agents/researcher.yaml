@@ -1,8 +1,12 @@
 name: Researcher
 description: "Deep research and information gathering across web and local sources"
+# Research benefits from Claude's long context and Perplexity's citations.
+# Session adapters use the user's existing subscriptions — the demand driver
+# surfaces signup prompts for missing providers.
 provider_priority:
-  - claude-max
-  - perplexity
+  - session:claude
+  - session:perplexity
+  - session:chatgpt
   - deepseek
   - ollama/qwen2.5
 tools:

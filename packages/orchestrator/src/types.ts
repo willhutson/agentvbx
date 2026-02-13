@@ -57,7 +57,7 @@ export type ToolCategory = 'think' | 'search' | 'build' | 'create' | 'connect' |
 
 // ─── Provider ───────────────────────────────────────────────────────────────
 
-export type IntegrationMethod = 'browser' | 'api' | 'sdk' | 'local';
+export type IntegrationMethod = 'browser' | 'api' | 'sdk' | 'local' | 'session';
 
 export interface ProviderTier {
   name: string;

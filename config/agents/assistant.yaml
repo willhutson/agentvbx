@@ -1,10 +1,14 @@
 name: Assistant
 description: "General-purpose conversational assistant for everyday tasks and questions"
+# Session-based providers first (user's existing subscriptions at flat-rate),
+# then free/cheap fallbacks. If session providers are unavailable, the demand
+# driver detects the gap and surfaces signup opportunities.
 provider_priority:
-  - ollama/qwen2.5
+  - session:chatgpt
+  - session:claude
+  - session:gemini
   - deepseek
-  - openai
-  - anthropic
+  - ollama/qwen2.5
 tools:
   - think
   - work

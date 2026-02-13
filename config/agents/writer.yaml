@@ -1,8 +1,10 @@
 name: Writer
 description: "Professional content creation — articles, reports, emails, social media"
+# Writing benefits from Claude's nuance and ChatGPT's versatility.
+# Session adapters ride the user's flat-rate subscription.
 provider_priority:
-  - claude-max
-  - chatgpt-pro
+  - session:claude
+  - session:chatgpt
   - deepseek
   - ollama/qwen2.5
 tools:
