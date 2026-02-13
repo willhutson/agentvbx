@@ -6,7 +6,7 @@
  */
 
 import { createLogger } from '../logger.js';
-import type { RecipeStep } from '../types.js';
+import type { RecipeStep, CloudProvider, ArtifactDestinations } from '../types.js';
 import type { StepHandler, RecipeExecution } from '../recipe/engine.js';
 import type { ArtifactManager } from './manager.js';
 
@@ -14,10 +14,7 @@ const logger = createLogger('artifact-delivery');
 
 export interface ArtifactDeliveryDeps {
   artifactManager: ArtifactManager;
-  getTenantDestinations: (tenantId: string) => {
-    defaults: Record<string, string>;
-    notifications: { primary: string };
-  } | undefined;
+  getTenantDestinations: (tenantId: string) => ArtifactDestinations | undefined;
 }
 
 export class ArtifactDeliveryHandler implements StepHandler {
@@ -69,9 +66,9 @@ export class ArtifactDeliveryHandler implements StepHandler {
         tags: params.tags as string[],
       },
       destinations ?? {
-        defaults: { documents: 'google_drive' as const },
-        notifications: { primary: 'whatsapp' as const },
-      } as never,
+        defaults: { documents: 'google_drive' as CloudProvider },
+        notifications: { primary: 'whatsapp' as const, include_thumbnail: true, include_preview_link: true },
+      },
       params.notify_to as string,
     );
 

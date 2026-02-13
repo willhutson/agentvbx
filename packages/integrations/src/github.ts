@@ -42,7 +42,7 @@ export class GitHubAdapter implements IntegrationAdapter {
   /**
    * List repos or files in a repo.
    */
-  async list(params?: Record<string, unknown>): Promise<(IntegrationFile | IntegrationRecord)[]> {
+  async list(params?: Record<string, unknown>): Promise<IntegrationFile[] | IntegrationRecord[]> {
     const repo = params?.repo as string | undefined;
     const path = params?.path as string | undefined;
 
@@ -205,7 +205,7 @@ export class GitHubAdapter implements IntegrationAdapter {
   private async request(
     path: string,
     options: { method?: string; body?: unknown } = {},
-  ): Promise<Record<string, unknown>> {
+  ): Promise<Record<string, any>> {
     if (!this.token) throw new Error('GitHub not authenticated');
 
     const { method = 'GET', body } = options;

@@ -240,7 +240,7 @@ export class NotionAdapter implements IntegrationAdapter {
   private async request(
     path: string,
     options: { method?: string; body?: unknown } = {},
-  ): Promise<Record<string, unknown>> {
+  ): Promise<Record<string, any>> {
     if (!this.apiKey) throw new Error('Notion not authenticated');
 
     const { method = 'GET', body } = options;

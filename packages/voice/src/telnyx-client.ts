@@ -90,7 +90,7 @@ export class TelnyxClient {
     const res = await this.request(`/available_phone_numbers?${query.toString()}`);
     const data = res.data ?? [];
 
-    return data.map((n: Record<string, unknown>) => ({
+    return data.map((n: Record<string, any>) => ({
       phone_number: n.phone_number as string,
       locality: n.locality as string ?? '',
       region: n.region_information?.[0]?.region_name ?? '',
@@ -215,7 +215,7 @@ export class TelnyxClient {
   private async request(
     path: string,
     options: { method?: string; body?: unknown } = {},
-  ): Promise<{ data: Record<string, unknown> & Record<string, unknown>[] }> {
+  ): Promise<{ data: Record<string, any> & Record<string, any>[] }> {
     const { method = 'GET', body } = options;
     const url = `${this.baseUrl}${path}`;
 
@@ -237,6 +237,6 @@ export class TelnyxClient {
       throw new Error(`Telnyx API error ${res.status}: ${errorText}`);
     }
 
-    return res.json() as Promise<{ data: Record<string, unknown> & Record<string, unknown>[] }>;
+    return res.json() as Promise<{ data: Record<string, any> & Record<string, any>[] }>;
   }
 }
