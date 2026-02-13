@@ -46,6 +46,23 @@ export { ArtifactManager } from './artifacts/index.js';
 export { ArtifactDeliveryHandler } from './artifacts/index.js';
 export type { ArtifactInput, CloudUploader, ArtifactNotifier } from './artifacts/index.js';
 
+// File stores (local, Obsidian, cloud) + artifact versioning
+export { LocalFileStore, ObsidianStore, CloudFileStore, FileStoreManager } from './files/index.js';
+export { VersionManager } from './files/index.js';
+export type {
+  FileEntry,
+  FileContent,
+  FileStore,
+  FileStoreType,
+  FileStoreConfig,
+  ObsidianNote,
+  ArtifactStatus,
+  ArtifactVersion,
+  FeedbackFragment,
+  UnifiedFeedback,
+  VersionedArtifact,
+} from './files/index.js';
+
 // Tenant management
 export { TenantManager } from './tenant/index.js';
 
