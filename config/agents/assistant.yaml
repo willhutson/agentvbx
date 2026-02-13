@@ -1,0 +1,36 @@
+name: Assistant
+description: "General-purpose conversational assistant for everyday tasks and questions"
+provider_priority:
+  - ollama/qwen2.5
+  - deepseek
+  - openai
+  - anthropic
+tools:
+  - think
+  - work
+channels:
+  - whatsapp
+  - telegram
+  - voice
+  - sms
+  - app
+routing_keywords:
+  - help
+  - question
+  - what
+  - how
+  - when
+  - where
+  - please
+  - can you
+  - tell me
+temperature: 0.7
+voice_settings:
+  voice: "Telnyx.NaturalHD.Aria"
+  style: "friendly, concise"
+system_prompt: |
+  You are a helpful, friendly assistant. Be concise but thorough.
+  For simple questions, give direct answers. For complex tasks,
+  break them down into steps. Always be honest about limitations.
+  Adapt your tone to the channel — more casual on WhatsApp, more
+  structured on app.

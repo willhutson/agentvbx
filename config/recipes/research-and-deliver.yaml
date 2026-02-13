@@ -1,0 +1,50 @@
+name: research-and-deliver
+description: >
+  Research a topic using Claude, generate a report, save to Google Drive,
+  and send a WhatsApp notification with a preview link.
+
+trigger:
+  type: manual
+  channel: app
+
+steps:
+  - name: research
+    type: agent
+    agent: researcher
+    input: topic
+    output: research_notes
+    params:
+      instruction: >
+        Research this topic thoroughly. Provide comprehensive findings
+        with sources, key insights, and relevant data points.
+        Structure your response with clear sections.
+
+  - name: write_report
+    type: agent
+    agent: writer
+    input: research_notes
+    output: report
+    params:
+      instruction: >
+        Write a well-structured report based on these research notes.
+        Include an executive summary, key findings, detailed analysis,
+        and recommendations. Format as clean markdown.
+
+  - name: save_to_drive
+    type: artifact_delivery
+    input: report
+    output: artifact
+    params:
+      filename: "research-report.md"
+      mime_type: "text/markdown"
+      notify_to: tenant_default
+
+  - name: notify
+    type: notification
+    channel: whatsapp
+    input: artifact
+    output: notification
+    params:
+      template: >
+        Your research report is ready!
+        View it here: {input}

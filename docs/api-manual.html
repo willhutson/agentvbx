@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENTVBX — API Manual &amp; Sandbox</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --border-focus: #6366f1;
+    --text: #e2e2ef;
+    --text-dim: #8888a0;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.1);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.1);
+    --orange: #f59e0b;
+    --orange-bg: rgba(245,158,11,0.1);
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.1);
+    --cyan: #06b6d4;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --radius: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    padding: 24px 0;
+  }
+
+  .sidebar-logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    padding: 0 24px 8px;
+  }
+
+  .sidebar-subtitle {
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 0 24px 24px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .nav-group { margin-bottom: 16px; }
+
+  .nav-group-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    padding: 8px 24px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 24px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.15s;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+  }
+
+  .nav-item:hover {
+    color: var(--text);
+    background: rgba(99,102,241,0.06);
+  }
+
+  .nav-item.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(99,102,241,0.08);
+  }
+
+  .method-badge {
+    font-size: 9px;
+    font-weight: 700;
+    font-family: var(--mono);
+    padding: 2px 6px;
+    border-radius: 3px;
+    min-width: 38px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .method-GET { background: var(--green-bg); color: var(--green); }
+  .method-POST { background: var(--blue-bg); color: var(--blue); }
+  .method-PATCH { background: var(--orange-bg); color: var(--orange); }
+  .method-DELETE { background: var(--red-bg); color: var(--red); }
+  .method-WS { background: rgba(6,182,212,0.1); color: var(--cyan); }
+
+  /* ── Main ── */
+  .main {
+    flex: 1;
+    max-width: 960px;
+    padding: 40px 48px 120px;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  h1 small {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-dim);
+    margin-left: 12px;
+  }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 48px 0 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    letter-spacing: -0.3px;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 32px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  p { color: var(--text-dim); margin-bottom: 12px; font-size: 14px; }
+
+  .intro-text { font-size: 15px; color: var(--text-dim); margin-bottom: 32px; max-width: 640px; }
+
+  /* ── Config Bar ── */
+  .config-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 32px;
+    display: flex;
+    gap: 16px;
+    align-items: end;
+    flex-wrap: wrap;
+  }
+
+  .config-field { display: flex; flex-direction: column; gap: 4px; }
+  .config-field label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+
+  .config-field input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: var(--mono);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .config-field input:focus { border-color: var(--border-focus); }
+  .config-field input::placeholder { color: var(--text-dim); opacity: 0.5; }
+
+  #baseUrl { width: 280px; }
+  #apiKey { width: 220px; }
+
+  .ws-indicator {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text-dim); margin-left: auto;
+  }
+
+  .ws-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--red); transition: background 0.3s;
+  }
+
+  .ws-dot.connected { background: var(--green); }
+
+  .ws-btn {
+    background: none; border: 1px solid var(--border); color: var(--text-dim);
+    padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ws-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Endpoint Card ── */
+  .endpoint {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .endpoint:hover { border-color: var(--border-focus); }
+
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .endpoint-header h4 {
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .endpoint-path {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .endpoint-toggle {
+    font-size: 12px;
+    color: var(--text-dim);
+    transition: transform 0.2s;
+  }
+
+  .endpoint-body {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .endpoint.open .endpoint-body { display: block; }
+  .endpoint.open .endpoint-toggle { transform: rotate(90deg); }
+
+  .endpoint-desc { font-size: 13px; color: var(--text-dim); margin: 12px 0; }
+
+  /* ── Table ── */
+  table {
+    width: 100%;
+    font-size: 13px;
+    border-collapse: collapse;
+    margin: 12px 0;
+  }
+
+  thead th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody td {
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(42,42,58,0.5);
+    vertical-align: top;
+  }
+
+  td code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .required { color: var(--red); font-size: 10px; font-weight: 700; }
+  .optional { color: var(--text-dim); font-size: 10px; }
+
+  /* ── Sandbox ── */
+  .sandbox {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 16px;
+    overflow: hidden;
+  }
+
+  .sandbox-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(99,102,241,0.05);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sandbox-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+
+  .sandbox-send {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 5px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .sandbox-send:hover { background: var(--accent-hover); }
+  .sandbox-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .sandbox-fields { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+
+  .sandbox-field { display: flex; flex-direction: column; gap: 3px; }
+
+  .sandbox-field label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-dim);
+  }
+
+  .sandbox-field input,
+  .sandbox-field textarea,
+  .sandbox-field select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: var(--mono);
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.15s;
+  }
+
+  .sandbox-field input:focus,
+  .sandbox-field textarea:focus,
+  .sandbox-field select:focus { border-color: var(--border-focus); }
+
+  .sandbox-field textarea { min-height: 100px; }
+
+  .sandbox-response {
+    border-top: 1px solid var(--border);
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .sandbox-response-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  .status-badge {
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--mono);
+  }
+
+  .status-2xx { background: var(--green-bg); color: var(--green); }
+  .status-4xx { background: var(--orange-bg); color: var(--orange); }
+  .status-5xx { background: var(--red-bg); color: var(--red); }
+
+  .response-time { color: var(--text-dim); font-size: 11px; margin-left: auto; }
+
+  pre.response-body {
+    padding: 12px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-x: auto;
+  }
+
+  /* ── WebSocket Panel ── */
+  .ws-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .ws-panel-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ws-panel-header h4 { font-size: 14px; font-weight: 600; }
+
+  .ws-log {
+    max-height: 360px;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  .ws-event {
+    display: flex; gap: 12px;
+    padding: 6px 20px;
+    font-size: 12px;
+    font-family: var(--mono);
+    border-bottom: 1px solid rgba(42,42,58,0.3);
+    transition: background 0.1s;
+  }
+
+  .ws-event:hover { background: rgba(99,102,241,0.04); }
+
+  .ws-event-time { color: var(--text-dim); white-space: nowrap; min-width: 70px; }
+  .ws-event-type { color: var(--cyan); min-width: 150px; font-weight: 600; }
+  .ws-event-data { color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .ws-empty {
+    padding: 32px 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* ── Example Block ── */
+  .example-block {
+    margin: 12px 0;
+  }
+
+  .example-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--text-dim); margin-bottom: 6px;
+  }
+
+  pre.example-code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .copy-btn {
+    float: right;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Section intros ── */
+  .section-intro {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+
+  .section-intro h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .section-intro p { font-size: 13px; margin-bottom: 0; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { padding: 24px 20px 80px; }
+    .config-bar { flex-direction: column; }
+    #baseUrl, #apiKey { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── Sidebar Navigation ──────────────────────────────────────────────── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">AGENTVBX</div>
+  <div class="sidebar-subtitle">API Manual v0.2.0</div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Overview</div>
+    <a class="nav-item active" href="#introduction" onclick="scrollToSection(event, 'introduction')">Introduction</a>
+    <a class="nav-item" href="#authentication" onclick="scrollToSection(event, 'authentication')">Authentication</a>
+    <a class="nav-item" href="#websocket" onclick="scrollToSection(event, 'websocket')">WebSocket Events</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">System</div>
+    <a class="nav-item" href="#get-health" onclick="scrollToSection(event, 'get-health')">
+      <span class="method-badge method-GET">GET</span> /api/health
+    </a>
+    <a class="nav-item" href="#get-system" onclick="scrollToSection(event, 'get-system')">
+      <span class="method-badge method-GET">GET</span> /api/system
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Tenants</div>
+    <a class="nav-item" href="#post-tenants" onclick="scrollToSection(event, 'post-tenants')">
+      <span class="method-badge method-POST">POST</span> /api/tenants
+    </a>
+    <a class="nav-item" href="#get-tenants" onclick="scrollToSection(event, 'get-tenants')">
+      <span class="method-badge method-GET">GET</span> /api/tenants
+    </a>
+    <a class="nav-item" href="#get-tenant" onclick="scrollToSection(event, 'get-tenant')">
+      <span class="method-badge method-GET">GET</span> /api/tenants/:id
+    </a>
+    <a class="nav-item" href="#patch-tenant" onclick="scrollToSection(event, 'patch-tenant')">
+      <span class="method-badge method-PATCH">PATCH</span> /api/tenants/:id
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Agents</div>
+    <a class="nav-item" href="#get-agents" onclick="scrollToSection(event, 'get-agents')">
+      <span class="method-badge method-GET">GET</span> /api/agents
+    </a>
+    <a class="nav-item" href="#get-agent" onclick="scrollToSection(event, 'get-agent')">
+      <span class="method-badge method-GET">GET</span> /api/agents/:name
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Messages</div>
+    <a class="nav-item" href="#post-messages" onclick="scrollToSection(event, 'post-messages')">
+      <span class="method-badge method-POST">POST</span> /api/messages
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Recipes</div>
+    <a class="nav-item" href="#get-recipes" onclick="scrollToSection(event, 'get-recipes')">
+      <span class="method-badge method-GET">GET</span> /api/recipes
+    </a>
+    <a class="nav-item" href="#post-recipe-exec" onclick="scrollToSection(event, 'post-recipe-exec')">
+      <span class="method-badge method-POST">POST</span> /api/recipes/:name/execute
+    </a>
+    <a class="nav-item" href="#get-execution" onclick="scrollToSection(event, 'get-execution')">
+      <span class="method-badge method-GET">GET</span> /api/recipes/executions/:id
+    </a>
+    <a class="nav-item" href="#delete-execution" onclick="scrollToSection(event, 'delete-execution')">
+      <span class="method-badge method-DELETE">DEL</span> /api/recipes/executions/:id
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Providers</div>
+    <a class="nav-item" href="#get-providers" onclick="scrollToSection(event, 'get-providers')">
+      <span class="method-badge method-GET">GET</span> /api/providers
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Processes</div>
+    <a class="nav-item" href="#get-processes" onclick="scrollToSection(event, 'get-processes')">
+      <span class="method-badge method-GET">GET</span> /api/processes
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Real-Time</div>
+    <a class="nav-item" href="#ws-panel" onclick="scrollToSection(event, 'ws-panel')">
+      <span class="method-badge method-WS">WS</span> /ws
+    </a>
+  </div>
+</nav>
+
+<!-- ─── Main Content ────────────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- Introduction -->
+  <section id="introduction">
+    <h1>AGENTVBX API <small>v0.2.0</small></h1>
+    <p class="intro-text">
+      The AGENTVBX REST API provides complete control over the orchestration layer — tenants, agents, messages, recipes, providers, and system state. All endpoints return JSON. Real-time events are available via WebSocket at <code>/ws</code>.
+    </p>
+  </section>
+
+  <!-- Config Bar -->
+  <div class="config-bar">
+    <div class="config-field">
+      <label>Base URL</label>
+      <input type="text" id="baseUrl" value="http://localhost:3000" placeholder="http://localhost:3000">
+    </div>
+    <div class="config-field">
+      <label>API Key (optional)</label>
+      <input type="password" id="apiKey" value="" placeholder="Bearer token">
+    </div>
+    <div class="ws-indicator">
+      <div class="ws-dot" id="wsDot"></div>
+      <span id="wsLabel">Disconnected</span>
+      <button class="ws-btn" id="wsToggle" onclick="toggleWebSocket()">Connect</button>
+    </div>
+  </div>
+
+  <!-- Authentication -->
+  <section id="authentication">
+    <h2>Authentication</h2>
+    <div class="section-intro">
+      <h4>Bearer Token (Optional)</h4>
+      <p>
+        If the server is started with an <code>apiKey</code> configuration, all endpoints (except <code>GET /api/health</code>) require a Bearer token in the <code>Authorization</code> header. If no API key is configured, all endpoints are open.
+      </p>
+    </div>
+    <div class="example-block">
+      <div class="example-label">Example Header</div>
+      <pre class="example-code">Authorization: Bearer your-api-key-here</pre>
+    </div>
+    <div class="example-block">
+      <div class="example-label">Unauthorized Response (401)</div>
+      <pre class="example-code">{
+  "error": "Unauthorized"
+}</pre>
+    </div>
+  </section>
+
+  <!-- WebSocket Overview -->
+  <section id="websocket">
+    <h2>WebSocket Events</h2>
+    <div class="section-intro">
+      <h4>Real-Time Event Stream</h4>
+      <p>
+        Connect to <code>ws://&lt;host&gt;:&lt;port&gt;/ws</code> for real-time events. On connect, the server sends the current system health. All subsequent events follow the same envelope format.
+      </p>
+    </div>
+    <div class="example-block">
+      <div class="example-label">Event Envelope</div>
+      <pre class="example-code">{
+  "type": "message:routed",
+  "data": { ... },
+  "timestamp": "2026-02-13T12:00:00.000Z"
+}</pre>
+    </div>
+    <table>
+      <thead><tr><th>Event Type</th><th>Trigger</th><th>Data</th></tr></thead>
+      <tbody>
+        <tr><td><code>health</code></td><td>On WebSocket connect</td><td>Full system health object</td></tr>
+        <tr><td><code>tenant:created</code></td><td>New tenant created</td><td>Tenant object</td></tr>
+        <tr><td><code>message:queued</code></td><td>Message accepted into queue</td><td><code>{ queue_id, message }</code></td></tr>
+        <tr><td><code>message:routed</code></td><td>Message routed to agent</td><td><code>{ message_id, agent, provider }</code></td></tr>
+        <tr><td><code>message:completed</code></td><td>Agent response delivered</td><td><code>{ message_id, response, duration_ms }</code></td></tr>
+        <tr><td><code>message:failed</code></td><td>All providers failed</td><td><code>{ message_id, error }</code></td></tr>
+        <tr><td><code>recipe:started</code></td><td>Recipe execution begins</td><td><code>{ execution_id, recipe, tenant_id }</code></td></tr>
+        <tr><td><code>recipe:step</code></td><td>Recipe step completes</td><td><code>{ execution_id, step, status }</code></td></tr>
+        <tr><td><code>recipe:completed</code></td><td>Recipe fully executed</td><td><code>{ execution_id, result }</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  SYSTEM                                                             -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>System</h2>
+
+  <!-- GET /api/health -->
+  <section id="get-health">
+    <div class="endpoint" data-method="GET" data-path="/api/health">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/health</span>
+        <h4>System Health</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns overall system health including queue statistics, registered agents, and process statuses. Does not require authentication.</p>
+        <div class="example-block">
+          <div class="example-label">Response 200</div>
+          <pre class="example-code">{
+  "status": "healthy",
+  "queue": {
+    "voice": { "pending": 0, "processing": 0 },
+    "chat": { "pending": 2, "processing": 1 },
+    "background": { "pending": 0, "processing": 0 }
+  },
+  "processes": {
+    "orchestrator": "running",
+    "whatsapp": "stopped",
+    "voice": "stopped"
+  },
+  "agents": ["Researcher", "Writer", "Coder", "Strategist", "Assistant", "Scheduler", "Creative Director"]
+}</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/health')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GET /api/system -->
+  <section id="get-system">
+    <div class="endpoint" data-method="GET" data-path="/api/system">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/system</span>
+        <h4>System Info</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns version, uptime, memory usage, WebSocket client count, and embedded health data. Useful for dashboards and monitoring.</p>
+        <div class="example-block">
+          <div class="example-label">Response 200</div>
+          <pre class="example-code">{
+  "version": "0.2.0",
+  "phase": "Phase 2-4",
+  "uptime": 3621.42,
+  "memory": {
+    "rss": 89456640,
+    "heapTotal": 35127296,
+    "heapUsed": 31842816,
+    "external": 2145632,
+    "arrayBuffers": 102400
+  },
+  "health": { ... },
+  "ws_clients": 3
+}</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/system')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  TENANTS                                                            -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>Tenants</h2>
+
+  <div class="section-intro">
+    <h4>Multi-Tenant Isolation</h4>
+    <p>
+      Every message, recipe execution, and artifact belongs to a tenant. Tenants have a <code>tier</code> (free, starter, pro, business, agency) that determines rate limits, provider access, and feature gates. Create a tenant before sending messages.
+    </p>
+  </div>
+
+  <!-- POST /api/tenants -->
+  <section id="post-tenants">
+    <div class="endpoint" data-method="POST" data-path="/api/tenants">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-POST">POST</span>
+        <span class="endpoint-path">/api/tenants</span>
+        <h4>Create Tenant</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Create a new tenant with a name and optional tier. Returns the created tenant with generated ID and timestamps. Broadcasts a <code>tenant:created</code> WebSocket event.</p>
+        <table>
+          <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>name</code></td><td>string</td><td><span class="required">REQUIRED</span></td><td>Display name for the tenant</td></tr>
+            <tr><td><code>tier</code></td><td>string</td><td><span class="optional">optional</span></td><td>Subscription tier: <code>free</code>, <code>starter</code>, <code>pro</code>, <code>business</code>, <code>agency</code>. Default: <code>free</code></td></tr>
+          </tbody>
+        </table>
+        <div class="example-block">
+          <div class="example-label">Response 201</div>
+          <pre class="example-code">{
+  "id": "t_abc123",
+  "name": "Acme Corp",
+  "tier": "pro",
+  "created_at": "2026-02-13T12:00:00.000Z"
+}</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'POST', '/api/tenants', ['name', 'tier'])">Send Request</button>
+          </div>
+          <div class="sandbox-fields">
+            <div class="sandbox-field">
+              <label>Name <span class="required">*</span></label>
+              <input type="text" data-param="name" placeholder="Acme Corp">
+            </div>
+            <div class="sandbox-field">
+              <label>Tier</label>
+              <select data-param="tier">
+                <option value="free">free</option>
+                <option value="starter">starter</option>
+                <option value="pro" selected>pro</option>
+                <option value="business">business</option>
+                <option value="agency">agency</option>
+              </select>
+            </div>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GET /api/tenants -->
+  <section id="get-tenants">
+    <div class="endpoint" data-method="GET" data-path="/api/tenants">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/tenants</span>
+        <h4>List Tenants</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns an array of all registered tenants with their IDs, names, tiers, and timestamps.</p>
+        <div class="example-block">
+          <div class="example-label">Response 200</div>
+          <pre class="example-code">[
+  {
+    "id": "t_abc123",
+    "name": "Acme Corp",
+    "tier": "pro",
+    "created_at": "2026-02-13T12:00:00.000Z"
+  }
+]</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/tenants')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GET /api/tenants/:id -->
+  <section id="get-tenant">
+    <div class="endpoint" data-method="GET" data-path="/api/tenants/:id">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/tenants/:id</span>
+        <h4>Get Tenant</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns a single tenant by ID. Returns 404 if not found.</p>
+        <table>
+          <thead><tr><th>Parameter</th><th>Location</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>path</td><td><span class="required">REQUIRED</span></td><td>Tenant ID (e.g. <code>t_abc123</code>)</td></tr>
+          </tbody>
+        </table>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/tenants/{id}', null, ['id'])">Send Request</button>
+          </div>
+          <div class="sandbox-fields">
+            <div class="sandbox-field">
+              <label>Tenant ID <span class="required">*</span></label>
+              <input type="text" data-path="id" placeholder="t_abc123">
+            </div>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PATCH /api/tenants/:id -->
+  <section id="patch-tenant">
+    <div class="endpoint" data-method="PATCH" data-path="/api/tenants/:id">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-PATCH">PATCH</span>
+        <span class="endpoint-path">/api/tenants/:id</span>
+        <h4>Update Tenant</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Partial update of a tenant. Pass only the fields you want to change. Returns the updated tenant or 404.</p>
+        <table>
+          <thead><tr><th>Parameter</th><th>Location</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>path</td><td><span class="required">REQUIRED</span></td><td>Tenant ID</td></tr>
+            <tr><td><code>name</code></td><td>body</td><td><span class="optional">optional</span></td><td>New display name</td></tr>
+            <tr><td><code>tier</code></td><td>body</td><td><span class="optional">optional</span></td><td>New tier</td></tr>
+          </tbody>
+        </table>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'PATCH', '/api/tenants/{id}', ['name', 'tier'], ['id'])">Send Request</button>
+          </div>
+          <div class="sandbox-fields">
+            <div class="sandbox-field">
+              <label>Tenant ID <span class="required">*</span></label>
+              <input type="text" data-path="id" placeholder="t_abc123">
+            </div>
+            <div class="sandbox-field">
+              <label>Name</label>
+              <input type="text" data-param="name" placeholder="New Name">
+            </div>
+            <div class="sandbox-field">
+              <label>Tier</label>
+              <select data-param="tier">
+                <option value="">— unchanged —</option>
+                <option value="free">free</option>
+                <option value="starter">starter</option>
+                <option value="pro">pro</option>
+                <option value="business">business</option>
+                <option value="agency">agency</option>
+              </select>
+            </div>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  AGENTS                                                             -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>Agents</h2>
+
+  <div class="section-intro">
+    <h4>Agent Blueprints</h4>
+    <p>
+      Agents are YAML-defined blueprints loaded from <code>config/agents/</code>. Each agent has a name, description, provider priority chain, tools, allowed channels, routing keywords, temperature, and system prompt. The router scores incoming messages against all agents and selects the best match.
+    </p>
+  </div>
+
+  <!-- GET /api/agents -->
+  <section id="get-agents">
+    <div class="endpoint" data-method="GET" data-path="/api/agents">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/agents</span>
+        <h4>List Agents</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns all registered agent blueprints loaded from YAML configuration.</p>
+        <div class="example-block">
+          <div class="example-label">Response 200</div>
+          <pre class="example-code">[
+  {
+    "name": "Researcher",
+    "description": "Deep research and information gathering across web and local sources",
+    "provider_priority": ["claude-max", "perplexity", "deepseek", "ollama/qwen2.5"],
+    "tools": ["exa", "firecrawl", "tavily", "perplexity", "local_search"],
+    "channels": ["whatsapp", "telegram", "app", "voice"],
+    "routing_keywords": ["research", "find", "search", "compare", "analyze"],
+    "temperature": 0.7
+  },
+  ...
+]</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/agents')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GET /api/agents/:name -->
+  <section id="get-agent">
+    <div class="endpoint" data-method="GET" data-path="/api/agents/:name">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/agents/:name</span>
+        <h4>Get Agent</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns a single agent blueprint by name (case-sensitive). Returns 404 if not found.</p>
+        <table>
+          <thead><tr><th>Parameter</th><th>Location</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>name</code></td><td>path</td><td><span class="required">REQUIRED</span></td><td>Agent name (e.g. <code>Researcher</code>, <code>Coder</code>)</td></tr>
+          </tbody>
+        </table>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/agents/{name}', null, ['name'])">Send Request</button>
+          </div>
+          <div class="sandbox-fields">
+            <div class="sandbox-field">
+              <label>Agent Name <span class="required">*</span></label>
+              <input type="text" data-path="name" placeholder="Researcher">
+            </div>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  MESSAGES                                                           -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>Messages</h2>
+
+  <div class="section-intro">
+    <h4>Message Pipeline</h4>
+    <p>
+      Messages enter the system via <code>POST /api/messages</code> (or channel bridges like WhatsApp/Voice). The orchestrator assigns an ID, queues by priority (voice &gt; chat &gt; background), routes to the best agent, dispatches to a provider via the fallback chain, and delivers the response. Every state change emits a WebSocket event.
+    </p>
+  </div>
+
+  <!-- POST /api/messages -->
+  <section id="post-messages">
+    <div class="endpoint" data-method="POST" data-path="/api/messages">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-POST">POST</span>
+        <span class="endpoint-path">/api/messages</span>
+        <h4>Send Message</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Submit a message to the orchestrator queue. The message will be routed to the best agent, dispatched to a provider, and the response delivered asynchronously. Returns a queue ID for tracking.</p>
+        <table>
+          <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>tenant_id</code></td><td>string</td><td><span class="required">REQUIRED</span></td><td>Tenant ID the message belongs to</td></tr>
+            <tr><td><code>number_id</code></td><td>string</td><td><span class="optional">optional</span></td><td>Number/channel identifier. Default: <code>default</code></td></tr>
+            <tr><td><code>channel</code></td><td>string</td><td><span class="required">REQUIRED</span></td><td>Source channel: <code>app</code>, <code>whatsapp</code>, <code>voice</code>, <code>sms</code>, <code>telegram</code></td></tr>
+            <tr><td><code>from</code></td><td>string</td><td><span class="required">REQUIRED</span></td><td>Sender identifier</td></tr>
+            <tr><td><code>to</code></td><td>string</td><td><span class="required">REQUIRED</span></td><td>Recipient identifier</td></tr>
+            <tr><td><code>text</code></td><td>string</td><td><span class="required">REQUIRED</span></td><td>Message content</td></tr>
+            <tr><td><code>media_url</code></td><td>string</td><td><span class="optional">optional</span></td><td>URL of attached media (image, audio, document)</td></tr>
+            <tr><td><code>metadata</code></td><td>object</td><td><span class="optional">optional</span></td><td>Arbitrary metadata (e.g. <code>{ "priority": "high" }</code>)</td></tr>
+          </tbody>
+        </table>
+        <div class="example-block">
+          <div class="example-label">Request Body</div>
+          <pre class="example-code">{
+  "tenant_id": "demo",
+  "number_id": "default",
+  "channel": "app",
+  "from": "user",
+  "to": "system",
+  "text": "Research the latest trends in AI orchestration"
+}</pre>
+        </div>
+        <div class="example-block">
+          <div class="example-label">Response 202</div>
+          <pre class="example-code">{
+  "queue_id": "1708345200000-0",
+  "message_id": "550e8400-e29b-41d4-a716-446655440000"
+}</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'POST', '/api/messages', ['tenant_id', 'number_id', 'channel', 'from', 'to', 'text'])">Send Request</button>
+          </div>
+          <div class="sandbox-fields">
+            <div class="sandbox-field">
+              <label>Tenant ID <span class="required">*</span></label>
+              <input type="text" data-param="tenant_id" placeholder="demo" value="demo">
+            </div>
+            <div class="sandbox-field">
+              <label>Number ID</label>
+              <input type="text" data-param="number_id" placeholder="default" value="default">
+            </div>
+            <div class="sandbox-field">
+              <label>Channel <span class="required">*</span></label>
+              <select data-param="channel">
+                <option value="app" selected>app</option>
+                <option value="whatsapp">whatsapp</option>
+                <option value="voice">voice</option>
+                <option value="sms">sms</option>
+                <option value="telegram">telegram</option>
+              </select>
+            </div>
+            <div class="sandbox-field">
+              <label>From <span class="required">*</span></label>
+              <input type="text" data-param="from" placeholder="user" value="user">
+            </div>
+            <div class="sandbox-field">
+              <label>To <span class="required">*</span></label>
+              <input type="text" data-param="to" placeholder="system" value="system">
+            </div>
+            <div class="sandbox-field">
+              <label>Text <span class="required">*</span></label>
+              <textarea data-param="text" placeholder="Research the latest trends in AI orchestration"></textarea>
+            </div>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  RECIPES                                                            -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>Recipes</h2>
+
+  <div class="section-intro">
+    <h4>Multi-Step Workflows</h4>
+    <p>
+      Recipes are YAML-defined multi-step workflows loaded from <code>config/recipes/</code>. Each step can invoke an agent, read/write integrations, deliver artifacts, or send notifications. Steps execute sequentially. Some steps can require human approval before proceeding. Recipe executions can be tracked and cancelled.
+    </p>
+  </div>
+
+  <!-- GET /api/recipes -->
+  <section id="get-recipes">
+    <div class="endpoint" data-method="GET" data-path="/api/recipes">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/recipes</span>
+        <h4>List Recipes</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns all available recipe definitions loaded from YAML configuration.</p>
+        <div class="example-block">
+          <div class="example-label">Response 200</div>
+          <pre class="example-code">[
+  {
+    "name": "research-and-deliver",
+    "description": "Deep research on a topic, write a report, upload to Drive, notify via WhatsApp",
+    "steps": [
+      { "name": "research", "type": "agent", "agent": "Researcher", "prompt_template": "..." },
+      { "name": "write-report", "type": "agent", "agent": "Writer", "prompt_template": "..." },
+      { "name": "upload-drive", "type": "integration_write", "platform": "google_drive" },
+      { "name": "notify", "type": "notification", "channel": "whatsapp" }
+    ]
+  }
+]</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/recipes')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- POST /api/recipes/:name/execute -->
+  <section id="post-recipe-exec">
+    <div class="endpoint" data-method="POST" data-path="/api/recipes/:name/execute">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-POST">POST</span>
+        <span class="endpoint-path">/api/recipes/:name/execute</span>
+        <h4>Execute Recipe</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Start executing a recipe by name. The recipe runs asynchronously — use the returned execution ID to track progress via the executions endpoint or WebSocket events. Broadcasts <code>recipe:started</code>.</p>
+        <table>
+          <thead><tr><th>Parameter</th><th>Location</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>name</code></td><td>path</td><td><span class="required">REQUIRED</span></td><td>Recipe name (e.g. <code>research-and-deliver</code>)</td></tr>
+            <tr><td><code>tenant_id</code></td><td>body</td><td><span class="required">REQUIRED</span></td><td>Tenant ID for execution context</td></tr>
+            <tr><td><code>number_id</code></td><td>body</td><td><span class="optional">optional</span></td><td>Number/channel ID. Default: <code>default</code></td></tr>
+            <tr><td><code>input</code></td><td>body</td><td><span class="optional">optional</span></td><td>Input data passed to the first step (string or object)</td></tr>
+          </tbody>
+        </table>
+        <div class="example-block">
+          <div class="example-label">Response 202</div>
+          <pre class="example-code">{
+  "execution_id": "exec_a1b2c3d4"
+}</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'POST', '/api/recipes/{name}/execute', ['tenant_id', 'number_id', 'input'], ['name'])">Send Request</button>
+          </div>
+          <div class="sandbox-fields">
+            <div class="sandbox-field">
+              <label>Recipe Name <span class="required">*</span></label>
+              <input type="text" data-path="name" placeholder="research-and-deliver">
+            </div>
+            <div class="sandbox-field">
+              <label>Tenant ID <span class="required">*</span></label>
+              <input type="text" data-param="tenant_id" placeholder="demo" value="demo">
+            </div>
+            <div class="sandbox-field">
+              <label>Number ID</label>
+              <input type="text" data-param="number_id" placeholder="default" value="default">
+            </div>
+            <div class="sandbox-field">
+              <label>Input</label>
+              <textarea data-param="input" placeholder="Research the latest trends in AI orchestration"></textarea>
+            </div>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GET /api/recipes/executions/:id -->
+  <section id="get-execution">
+    <div class="endpoint" data-method="GET" data-path="/api/recipes/executions/:id">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/recipes/executions/:id</span>
+        <h4>Get Execution Status</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns the current state of a recipe execution including status, current step, step results, and timing. Returns 404 if execution ID is not found.</p>
+        <table>
+          <thead><tr><th>Parameter</th><th>Location</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>path</td><td><span class="required">REQUIRED</span></td><td>Execution ID returned by the execute endpoint</td></tr>
+          </tbody>
+        </table>
+        <div class="example-block">
+          <div class="example-label">Response 200</div>
+          <pre class="example-code">{
+  "id": "exec_a1b2c3d4",
+  "recipe": "research-and-deliver",
+  "status": "running",
+  "current_step": 1,
+  "steps": [
+    { "name": "research", "status": "completed", "duration_ms": 4200 },
+    { "name": "write-report", "status": "running" },
+    { "name": "upload-drive", "status": "pending" },
+    { "name": "notify", "status": "pending" }
+  ],
+  "started_at": "2026-02-13T12:00:00.000Z"
+}</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/recipes/executions/{id}', null, ['id'])">Send Request</button>
+          </div>
+          <div class="sandbox-fields">
+            <div class="sandbox-field">
+              <label>Execution ID <span class="required">*</span></label>
+              <input type="text" data-path="id" placeholder="exec_a1b2c3d4">
+            </div>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DELETE /api/recipes/executions/:id -->
+  <section id="delete-execution">
+    <div class="endpoint" data-method="DELETE" data-path="/api/recipes/executions/:id">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-DELETE">DEL</span>
+        <span class="endpoint-path">/api/recipes/executions/:id</span>
+        <h4>Cancel Execution</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Cancel a running recipe execution. Only works on executions in <code>running</code> or <code>waiting_approval</code> status. Returns 404 if the execution is not found or already completed.</p>
+        <table>
+          <thead><tr><th>Parameter</th><th>Location</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>path</td><td><span class="required">REQUIRED</span></td><td>Execution ID to cancel</td></tr>
+          </tbody>
+        </table>
+        <div class="example-block">
+          <div class="example-label">Response 200</div>
+          <pre class="example-code">{
+  "cancelled": true
+}</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'DELETE', '/api/recipes/executions/{id}', null, ['id'])">Send Request</button>
+          </div>
+          <div class="sandbox-fields">
+            <div class="sandbox-field">
+              <label>Execution ID <span class="required">*</span></label>
+              <input type="text" data-path="id" placeholder="exec_a1b2c3d4">
+            </div>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  PROVIDERS                                                          -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>Providers</h2>
+
+  <div class="section-intro">
+    <h4>Provider Registry</h4>
+    <p>
+      The provider registry is a YAML-based catalog of 21+ AI providers. Each provider entry includes models, capabilities, pricing tiers, and endpoint configuration. The <code>AdapterManager</code> uses this registry with the agent's <code>provider_priority</code> to build fallback chains — if the first provider is unavailable, it automatically tries the next.
+    </p>
+  </div>
+
+  <!-- GET /api/providers -->
+  <section id="get-providers">
+    <div class="endpoint" data-method="GET" data-path="/api/providers">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/providers</span>
+        <h4>List Providers</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns the full provider registry loaded from YAML configuration, including all registered providers, their models, capabilities, and configuration.</p>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/providers')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  PROCESSES                                                          -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>Processes</h2>
+
+  <div class="section-intro">
+    <h4>Process Supervisor</h4>
+    <p>
+      The orchestrator's process supervisor manages the lifecycle of sub-processes (WhatsApp bridge, Voice bridge, browser sessions). This endpoint returns the current status of all supervised processes.
+    </p>
+  </div>
+
+  <!-- GET /api/processes -->
+  <section id="get-processes">
+    <div class="endpoint" data-method="GET" data-path="/api/processes">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/processes</span>
+        <h4>List Processes</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns the status of all supervised processes including their state, uptime, restart counts, and last error.</p>
+        <div class="example-block">
+          <div class="example-label">Response 200</div>
+          <pre class="example-code">{
+  "orchestrator": { "status": "running", "uptime": 3621, "restarts": 0 },
+  "whatsapp": { "status": "stopped", "uptime": 0, "restarts": 0 },
+  "voice": { "status": "stopped", "uptime": 0, "restarts": 0 },
+  "agent-browser": { "status": "stopped", "uptime": 0, "restarts": 0 }
+}</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/processes')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  WEBSOCKET LIVE PANEL                                               -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>WebSocket Live Panel</h2>
+
+  <section id="ws-panel">
+    <div class="ws-panel">
+      <div class="ws-panel-header">
+        <span class="method-badge method-WS">WS</span>
+        <h4>Real-Time Event Stream</h4>
+      </div>
+      <div class="ws-log" id="wsLog">
+        <div class="ws-empty" id="wsEmpty">Connect to the WebSocket to see live events. Use the Connect button in the configuration bar above.</div>
+      </div>
+    </div>
+
+    <div class="section-intro">
+      <h4>Connecting from Code</h4>
+      <p>Connect to the WebSocket for real-time orchestration events.</p>
+    </div>
+
+    <div class="example-block">
+      <div class="example-label">JavaScript</div>
+      <pre class="example-code">const ws = new WebSocket('ws://localhost:3000/ws');
+
+ws.onopen = () => console.log('Connected to AGENTVBX');
+
+ws.onmessage = (event) => {
+  const { type, data, timestamp } = JSON.parse(event.data);
+  console.log(`[${timestamp}] ${type}:`, data);
+
+  switch (type) {
+    case 'health':
+      // Initial state on connect
+      updateDashboard(data);
+      break;
+    case 'message:routed':
+      // Message was assigned to an agent
+      showRouting(data.message_id, data.agent, data.provider);
+      break;
+    case 'message:completed':
+      // Agent response is ready
+      displayResponse(data.message_id, data.response);
+      break;
+    case 'recipe:started':
+      // Recipe execution began
+      trackRecipe(data.execution_id, data.recipe);
+      break;
+  }
+};
+
+ws.onerror = (err) => console.error('WebSocket error:', err);
+ws.onclose = () => console.log('Disconnected — will retry in 3s');</pre>
+    </div>
+
+    <div class="example-block">
+      <div class="example-label">cURL (send a message and watch events)</div>
+      <pre class="example-code"># Terminal 1: Listen to WebSocket events
+npx wscat -c ws://localhost:3000/ws
+
+# Terminal 2: Send a message
+curl -X POST http://localhost:3000/api/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tenant_id": "demo",
+    "channel": "app",
+    "from": "user",
+    "to": "system",
+    "text": "Write a haiku about AI"
+  }'
+
+# Terminal 1 output:
+# {"type":"health","data":{...},"timestamp":"..."}
+# {"type":"message:queued","data":{...},"timestamp":"..."}
+# {"type":"message:routed","data":{"message_id":"...","agent":"Writer"},"timestamp":"..."}
+# {"type":"message:completed","data":{"message_id":"...","response":"..."},"timestamp":"..."}</pre>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  ERROR REFERENCE                                                    -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>Error Reference</h2>
+
+  <div class="section-intro">
+    <h4>Error Response Format</h4>
+    <p>All error responses follow the same JSON structure. HTTP status codes are used semantically.</p>
+  </div>
+
+  <div class="example-block">
+    <div class="example-label">Error Envelope</div>
+    <pre class="example-code">{
+  "error": "Human-readable error message"
+}</pre>
+  </div>
+
+  <table>
+    <thead><tr><th>Status</th><th>Meaning</th><th>Common Causes</th></tr></thead>
+    <tbody>
+      <tr><td><code>400</code></td><td>Bad Request</td><td>Missing required field (e.g. <code>name</code> for tenants, <code>tenant_id</code> for recipes)</td></tr>
+      <tr><td><code>401</code></td><td>Unauthorized</td><td>Missing or invalid <code>Authorization: Bearer</code> header when API key is configured</td></tr>
+      <tr><td><code>404</code></td><td>Not Found</td><td>Tenant, agent, recipe, or execution ID does not exist</td></tr>
+      <tr><td><code>503</code></td><td>Service Unavailable</td><td>Orchestrator not initialized yet (server starting up)</td></tr>
+    </tbody>
+  </table>
+
+</div><!-- /main -->
+
+<!-- ─── JavaScript ──────────────────────────────────────────────────────── -->
+<script>
+// ── State ──
+let ws = null;
+let wsEvents = [];
+
+// ── Navigation ──
+function scrollToSection(e, id) {
+  e.preventDefault();
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+}
+
+// Track active section on scroll
+const observer = new IntersectionObserver((entries) => {
+  for (const entry of entries) {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.toggle('active', n.getAttribute('href') === '#' + id);
+      });
+    }
+  }
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+document.querySelectorAll('section[id]').forEach(s => observer.observe(s));
+
+// ── Endpoint Toggle ──
+function toggleEndpoint(header) {
+  header.closest('.endpoint').classList.toggle('open');
+}
+
+// ── Sandbox Request ──
+async function sendRequest(btn, method, pathTemplate, bodyParams, pathParams) {
+  const sandbox = btn.closest('.sandbox');
+  const responseDiv = sandbox.querySelector('.sandbox-response');
+  const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+  const apiKey = document.getElementById('apiKey').value;
+
+  // Build path with path params
+  let path = pathTemplate;
+  if (pathParams) {
+    for (const p of pathParams) {
+      const input = sandbox.querySelector(`[data-path="${p}"]`);
+      const val = input ? input.value.trim() : '';
+      if (!val) {
+        showResponse(responseDiv, 0, { error: `Path parameter "${p}" is required` }, 0);
+        return;
+      }
+      path = path.replace(`{${p}}`, encodeURIComponent(val));
+    }
+  }
+
+  // Build body
+  let body = null;
+  if (bodyParams && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
+    body = {};
+    for (const p of bodyParams) {
+      const input = sandbox.querySelector(`[data-param="${p}"]`);
+      if (input) {
+        const val = input.value.trim();
+        if (val) body[p] = val;
+      }
+    }
+  }
+
+  // Headers
+  const headers = { 'Content-Type': 'application/json' };
+  if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  const startTime = performance.now();
+
+  try {
+    const opts = { method, headers };
+    if (body && Object.keys(body).length > 0) opts.body = JSON.stringify(body);
+
+    const resp = await fetch(baseUrl + path, opts);
+    const elapsed = Math.round(performance.now() - startTime);
+    let data;
+    try { data = await resp.json(); } catch { data = null; }
+    showResponse(responseDiv, resp.status, data, elapsed);
+  } catch (err) {
+    const elapsed = Math.round(performance.now() - startTime);
+    showResponse(responseDiv, 0, { error: `Network error: ${err.message}` }, elapsed);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Request';
+  }
+}
+
+function showResponse(div, status, data, elapsed) {
+  div.style.display = 'block';
+  const statusClass = status >= 200 && status < 300 ? 'status-2xx' :
+                      status >= 400 && status < 500 ? 'status-4xx' : 'status-5xx';
+  const statusText = status === 0 ? 'ERR' : status;
+
+  div.innerHTML = `
+    <div class="sandbox-response-header">
+      <span class="status-badge ${statusClass}">${statusText}</span>
+      <span>Response</span>
+      <span class="response-time">${elapsed}ms</span>
+    </div>
+    <pre class="response-body">${escapeHtml(JSON.stringify(data, null, 2) || 'No response body')}</pre>
+  `;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── WebSocket ──
+function toggleWebSocket() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.close();
+    return;
+  }
+
+  const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+  const wsUrl = baseUrl.replace(/^http/, 'ws') + '/ws';
+
+  try {
+    ws = new WebSocket(wsUrl);
+  } catch (err) {
+    console.error('WebSocket connection failed:', err);
+    return;
+  }
+
+  ws.onopen = () => {
+    document.getElementById('wsDot').classList.add('connected');
+    document.getElementById('wsLabel').textContent = 'Connected';
+    document.getElementById('wsToggle').textContent = 'Disconnect';
+    document.getElementById('wsEmpty').style.display = 'none';
+  };
+
+  ws.onclose = () => {
+    document.getElementById('wsDot').classList.remove('connected');
+    document.getElementById('wsLabel').textContent = 'Disconnected';
+    document.getElementById('wsToggle').textContent = 'Connect';
+  };
+
+  ws.onerror = () => {
+    document.getElementById('wsDot').classList.remove('connected');
+    document.getElementById('wsLabel').textContent = 'Error';
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const parsed = JSON.parse(event.data);
+      addWsEvent(parsed);
+    } catch {
+      addWsEvent({ type: 'raw', data: event.data, timestamp: new Date().toISOString() });
+    }
+  };
+}
+
+function addWsEvent(evt) {
+  wsEvents.unshift(evt);
+  if (wsEvents.length > 200) wsEvents.pop();
+
+  const log = document.getElementById('wsLog');
+  const empty = document.getElementById('wsEmpty');
+  if (empty) empty.style.display = 'none';
+
+  const row = document.createElement('div');
+  row.className = 'ws-event';
+
+  const time = new Date(evt.timestamp || Date.now());
+  const timeStr = time.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  const dataStr = typeof evt.data === 'object' ? JSON.stringify(evt.data) : String(evt.data);
+  const truncated = dataStr.length > 200 ? dataStr.substring(0, 200) + '...' : dataStr;
+
+  row.innerHTML = `
+    <span class="ws-event-time">${timeStr}</span>
+    <span class="ws-event-type">${escapeHtml(evt.type || 'unknown')}</span>
+    <span class="ws-event-data" title="${escapeHtml(dataStr)}">${escapeHtml(truncated)}</span>
+  `;
+
+  row.addEventListener('click', () => {
+    const detail = JSON.stringify(evt, null, 2);
+    const w = window.open('', '_blank', 'width=600,height=400');
+    w.document.write(`<pre style="font-family:monospace;font-size:13px;padding:16px;background:#0a0a0f;color:#e2e2ef;margin:0;min-height:100vh">${escapeHtml(detail)}</pre>`);
+  });
+
+  log.insertBefore(row, log.firstChild);
+
+  // Keep DOM lean
+  while (log.children.length > 201) {
+    log.removeChild(log.lastChild);
+  }
+}
+
+// ── Init: open first two endpoints ──
+document.addEventListener('DOMContentLoaded', () => {
+  const first = document.querySelector('.endpoint');
+  if (first) first.classList.add('open');
+});
+</script>
+
+</body>
+</html>

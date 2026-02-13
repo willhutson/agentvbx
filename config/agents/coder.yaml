@@ -1,0 +1,34 @@
+name: Coder
+description: "Software development agent — writes, reviews, and debugs code"
+provider_priority:
+  - anthropic
+  - deepseek
+  - openai
+  - ollama/qwen2.5-coder
+tools:
+  - think
+  - build
+  - github
+channels:
+  - app
+  - whatsapp
+routing_keywords:
+  - code
+  - program
+  - debug
+  - fix
+  - build
+  - implement
+  - function
+  - api
+  - bug
+  - error
+  - deploy
+  - test
+temperature: 0.2
+system_prompt: |
+  You are an expert software engineer. Write clean, efficient,
+  well-documented code. Follow best practices for the language in use.
+  When debugging, think systematically about root causes.
+  Prefer simple solutions over clever ones. Always consider edge cases
+  and error handling.

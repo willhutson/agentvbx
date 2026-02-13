@@ -22,3 +22,12 @@ export type {
   AdapterResponse,
   OllamaConfig,
 } from './adapters/index.js';
+
+export { AnthropicAdapter } from './adapters/anthropic.js';
+export type { AnthropicConfig } from './adapters/anthropic.js';
+
+export { OpenAIAdapter } from './adapters/openai.js';
+export type { OpenAIConfig } from './adapters/openai.js';
+
+export { DeepSeekAdapter } from './adapters/deepseek.js';
+export type { DeepSeekConfig } from './adapters/deepseek.js';

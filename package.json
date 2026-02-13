@@ -1,6 +1,6 @@
 {
   "name": "agentvbx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "The orchestration layer that brings AI to the masses",
   "workspaces": [
@@ -8,14 +8,17 @@
     "packages/providers",
     "packages/whatsapp",
     "packages/voice",
-    "packages/agent-browser"
+    "packages/agent-browser",
+    "packages/api",
+    "packages/integrations"
   ],
   "scripts": {
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces --if-present",
     "lint": "eslint 'packages/*/src/**/*.ts'",
-    "dev": "npm run dev --workspace=packages/orchestrator",
-    "start": "npm run start --workspace=packages/orchestrator",
+    "dev": "npm run dev --workspace=packages/api",
+    "dev:orchestrator": "npm run dev --workspace=packages/orchestrator",
+    "start": "npm run start --workspace=packages/api",
     "clean": "rm -rf packages/*/dist"
   },
   "engines": {
