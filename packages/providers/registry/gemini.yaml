@@ -1,0 +1,25 @@
+id: gemini
+name: Gemini
+company: Google
+url: https://gemini.google.com
+category: think
+subcategory: general
+integration_method: browser
+capabilities:
+  - reasoning
+  - coding
+  - writing
+  - google_workspace
+  - massive_context
+  - vision
+  - web_browsing
+supported_languages: ["en", "fr", "de", "es", "ja", "ko", "zh", "ar", "hi", "pt"]
+tiers:
+  - name: Free
+    limits: "Flash model, generous limits"
+  - name: Advanced
+    limits: "Pro/Ultra models, 2M context, Google One AI Premium"
+priority: 4
+enabled: true
+affiliate:
+  has_existing_program: false

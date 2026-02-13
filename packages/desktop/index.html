@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AGENTVBX</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    .app { display: flex; height: 100vh; }
+    .sidebar {
+      width: 260px;
+      background: #111;
+      border-right: 1px solid #222;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
+    }
+    .sidebar .subtitle {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+    .nav-section {
+      margin-bottom: 20px;
+    }
+    .nav-section h3 {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .nav-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #999;
+      transition: all 0.15s;
+    }
+    .nav-item:hover { background: #1a1a1a; color: #fff; }
+    .nav-item.active { background: #1a1a2e; color: #6c7aff; }
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h2 { font-size: 16px; font-weight: 600; }
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .status-badge.healthy { background: #0a2a0a; color: #4ade80; }
+    .status-badge.degraded { background: #2a2a0a; color: #facc15; }
+    .content { flex: 1; padding: 24px; overflow-y: auto; }
+    .card {
+      background: #151515;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card h4 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+    .card p { font-size: 12px; color: #888; line-height: 1.5; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      font-size: 12px;
+    }
+    .stat-label { color: #888; }
+    .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="sidebar">
+      <h1>AGENTVBX</h1>
+      <div class="subtitle">Orchestration Layer</div>
+
+      <div class="nav-section">
+        <h3>Dashboard</h3>
+        <div class="nav-item active">Overview</div>
+        <div class="nav-item">Queue Status</div>
+      </div>
+
+      <div class="nav-section">
+        <h3>Agents</h3>
+        <div class="nav-item">Active Agents</div>
+        <div class="nav-item">Blueprints</div>
+      </div>
+
+      <div class="nav-section">
+        <h3>Recipes</h3>
+        <div class="nav-item">My Recipes</div>
+        <div class="nav-item">Executions</div>
+      </div>
+
+      <div class="nav-section">
+        <h3>Providers</h3>
+        <div class="nav-item">Sessions</div>
+        <div class="nav-item">Registry</div>
+      </div>
+
+      <div class="nav-section">
+        <h3>Channels</h3>
+        <div class="nav-item">WhatsApp</div>
+        <div class="nav-item">Voice / Phone</div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="header">
+        <h2>System Overview</h2>
+        <div class="status-badge healthy" id="status-badge">Healthy</div>
+      </div>
+
+      <div class="content">
+        <div class="grid">
+          <div class="card">
+            <h4>Queue Stats</h4>
+            <div class="stat">
+              <span class="stat-label">Voice (priority)</span>
+              <span class="stat-value" id="queue-voice">0</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Chat</span>
+              <span class="stat-value" id="queue-chat">0</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Background</span>
+              <span class="stat-value" id="queue-background">0</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h4>Active Agents</h4>
+            <p id="agents-list">No agents registered yet. Add agent blueprints to get started.</p>
+          </div>
+
+          <div class="card">
+            <h4>Provider Sessions</h4>
+            <p id="sessions-list">No active browser sessions. Connect a provider to begin.</p>
+          </div>
+
+          <div class="card">
+            <h4>Recent Activity</h4>
+            <p>Waiting for first message...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Health check polling — calls Tauri backend or REST API
+    async function checkHealth() {
+      try {
+        if (window.__TAURI__) {
+          const { invoke } = window.__TAURI__.core;
+          const health = await invoke('get_health');
+          updateUI(health);
+        }
+      } catch (e) {
+        console.log('Health check unavailable:', e);
+      }
+    }
+
+    function updateUI(health) {
+      const badge = document.getElementById('status-badge');
+      if (badge) {
+        badge.textContent = health.status || 'Unknown';
+        badge.className = 'status-badge ' + (health.status || 'degraded');
+      }
+    }
+
+    // Poll health every 5 seconds
+    setInterval(checkHealth, 5000);
+    checkHealth();
+  </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+id: firecrawl
+name: Firecrawl
+company: Firecrawl
+url: https://firecrawl.dev
+category: search
+subcategory: web_scraping
+integration_method: api
+capabilities:
+  - web_scraping
+  - structured_extraction
+  - url_to_markdown
+  - batch_scraping
+  - crawl_sitemap
+supported_languages: ["en"]
+tiers:
+  - name: Free
+    limits: "500 credits/month"
+  - name: Hobby
+    limits: "3000 credits/month"
+  - name: Standard
+    limits: "250K credits/month"
+priority: 3
+enabled: true
+affiliate:
+  has_existing_program: false

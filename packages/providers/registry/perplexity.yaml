@@ -1,0 +1,23 @@
+id: perplexity
+name: Perplexity
+company: Perplexity AI
+url: https://perplexity.ai
+category: search
+subcategory: research
+integration_method: browser
+capabilities:
+  - web_search
+  - research
+  - citations
+  - academic_search
+  - real_time_data
+supported_languages: ["en", "fr", "de", "es", "ja"]
+tiers:
+  - name: Free
+    limits: "Unlimited Q&A, limited Pro Search"
+  - name: Pro
+    limits: "Unlimited Pro Search, file upload, API access"
+priority: 1
+enabled: true
+affiliate:
+  has_existing_program: false

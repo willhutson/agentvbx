@@ -1,0 +1,29 @@
+{
+  "name": "agentvbx",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The orchestration layer that brings AI to the masses",
+  "workspaces": [
+    "packages/orchestrator",
+    "packages/providers",
+    "packages/whatsapp",
+    "packages/voice",
+    "packages/agent-browser"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint 'packages/*/src/**/*.ts'",
+    "dev": "npm run dev --workspace=packages/orchestrator",
+    "start": "npm run start --workspace=packages/orchestrator",
+    "clean": "rm -rf packages/*/dist"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/willhutson/agentvbx"
+  }
+}

@@ -1,0 +1,25 @@
+id: telnyx
+name: Telnyx
+company: Telnyx
+url: https://telnyx.com
+category: talk
+subcategory: telephony
+integration_method: api
+capabilities:
+  - phone_numbers
+  - voice_ai_agents
+  - sms
+  - whatsapp_business
+  - call_control
+  - sip_trunking
+  - real_time_transcription
+  - number_porting
+supported_languages: ["en", "es", "fr", "de", "ar", "pt", "it", "ja", "ko", "zh"]
+tiers:
+  - name: Pay-as-you-go
+    limits: "Per-minute and per-message pricing"
+priority: 1
+enabled: true
+affiliate:
+  has_existing_program: true
+  commission_type: recurring

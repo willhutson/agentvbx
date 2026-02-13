@@ -1,0 +1,80 @@
+# Sample tenant configuration
+# This is a reference for the tenant data model.
+# Actual tenant configs are created dynamically and stored in tenants/{id}/config.yaml
+
+id: sample-tenant-001
+name: "LMTD Agency"
+tier: pro
+
+numbers:
+  - phone_number: "+971-4-555-6789"
+    telnyx_id: "telnyx-uuid-here"
+    country: AE
+    locality: "Dubai"
+    capabilities:
+      - voice_inbound
+      - voice_outbound
+      - sms
+      - whatsapp
+    max_agents: 5
+    agents:
+      - researcher
+      - writer
+      - strategist
+      - creative-director
+      - scheduler
+    voice_settings:
+      default_voice: "Telnyx.NaturalHD.Estelle"
+      language: "en-US"
+      transcription_model: "distil-whisper/distil-large-v2"
+      llm_endpoint: "ollama://qwen2.5:7b"
+      greeting: "Hi, this is your AGENTVBX assistant at LMTD. How can I help?"
+      fallback_llm: "deepseek"
+
+transcription:
+  live_calls:
+    engine: telnyx
+    model: "telnyx-native"
+  voice_notes:
+    engine: auto
+    fallback: local_whisper
+    privacy_mode: false
+  local_whisper:
+    enabled: true
+    model: "whisper-large-v3"
+    max_audio_length: 300
+  deepgram:
+    mode: batch
+    model: "nova-3"
+    features:
+      diarization: false
+      language_detection: false
+      smart_formatting: true
+
+artifact_destinations:
+  defaults:
+    documents: google_drive
+    spreadsheets: google_drive
+    presentations: google_drive
+    images: google_drive
+    videos: google_drive
+    audio: google_drive
+    code: github
+    notes: notion
+  overrides:
+    - match: "client_*"
+      destination: google_drive
+      folder: "Client Deliverables/{client_name}"
+    - match: "*.pptx"
+      destination: google_drive
+      convert_to: google_slides
+  notifications:
+    primary: whatsapp
+    secondary: email
+    include_thumbnail: true
+    include_preview_link: true
+
+integrations: []
+
+created_at: "2026-02-12T00:00:00.000Z"
+updated_at: "2026-02-12T00:00:00.000Z"

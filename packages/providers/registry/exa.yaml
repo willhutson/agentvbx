@@ -1,0 +1,23 @@
+id: exa
+name: Exa
+company: Exa
+url: https://exa.ai
+category: search
+subcategory: semantic_search
+integration_method: api
+capabilities:
+  - semantic_search
+  - content_discovery
+  - people_search
+  - company_search
+  - similarity_search
+supported_languages: ["en"]
+tiers:
+  - name: Free
+    limits: "1000 searches/month"
+  - name: Pro
+    limits: "10000+ searches/month"
+priority: 2
+enabled: true
+affiliate:
+  has_existing_program: false

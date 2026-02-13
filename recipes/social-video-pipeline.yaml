@@ -1,0 +1,69 @@
+name: "Social Video Pipeline"
+description: "Turn a brief into a polished social media video with script, storyboard, animation, and voiceover"
+trigger:
+  type: manual
+  channel: whatsapp
+steps:
+  - name: "Write the concept"
+    agent: writer
+    provider: chatgpt-pro
+    input: user_brief
+    output: script_and_shot_list
+
+  - name: "Storyboard it"
+    agent: creative-director
+    provider: kimi
+    input: script_and_shot_list
+    output: visual_storyboard
+
+  - name: "Generate video"
+    agent: creative-director
+    provider: kling
+    input: visual_storyboard
+    output: video_file
+
+  - name: "Add voiceover"
+    agent: creative-director
+    provider: elevenlabs
+    input: script_and_shot_list
+    output: audio_file
+
+  - name: "Compose final"
+    agent: editor
+    provider: local
+    input:
+      - video_file
+      - audio_file
+    output: final_video
+
+  - name: "Deliver video"
+    type: artifact_delivery
+    input: final_video
+    params:
+      destination: google_drive
+      folder: "Videos/{date}"
+      notify:
+        - whatsapp
+        - email
+      include_thumbnail: true
+
+marketplace:
+  id: recipe-social-video-pipeline-v2
+  creator: agentvbx
+  title: "Social Video Pipeline"
+  description: "Turn a brief into a polished social media video with script, storyboard, animation, and voiceover."
+  category: content_creation
+  tags:
+    - video
+    - social_media
+    - marketing
+    - animation
+  version: "2.1"
+  required_tools:
+    - chatgpt-pro
+    - kling
+    - elevenlabs
+  optional_tools:
+    - midjourney
+  pricing:
+    type: free

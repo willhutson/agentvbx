@@ -1,0 +1,24 @@
+id: midjourney
+name: Midjourney
+company: Midjourney
+url: https://midjourney.com
+category: create
+subcategory: image_generation
+integration_method: browser
+capabilities:
+  - text_to_image
+  - image_variation
+  - upscaling
+  - style_transfer
+supported_languages: ["en"]
+tiers:
+  - name: Basic
+    limits: "200 generations/month"
+  - name: Standard
+    limits: "Unlimited relaxed, 15h fast"
+  - name: Pro
+    limits: "Unlimited relaxed, 30h fast, stealth mode"
+priority: 1
+enabled: true
+affiliate:
+  has_existing_program: false

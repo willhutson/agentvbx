@@ -1,0 +1,24 @@
+id: kling
+name: Kling
+company: Kuaishou
+url: https://kling.ai
+category: create
+subcategory: video_generation
+integration_method: browser
+capabilities:
+  - text_to_video
+  - image_to_video
+  - multi_shot_storyboard
+  - subject_consistency
+supported_languages: ["en", "zh"]
+tiers:
+  - name: Free
+    limits: "66 generations/day"
+  - name: Pro
+    limits: "Unlimited, 2K output"
+priority: 1
+enabled: true
+affiliate:
+  program_url: https://kling.ai/affiliates
+  commission_type: recurring
+  has_existing_program: true
