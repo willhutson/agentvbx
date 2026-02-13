@@ -147,7 +147,7 @@ export class RedisStreams {
 
       if (!results) return;
 
-      for (const [_stream, messages] of results) {
+      for (const [_stream, messages] of results as [string, [string, string[]][]][]) {
         for (const [messageId, fields] of messages) {
           const dataIdx = fields.indexOf('data');
           if (dataIdx === -1) continue;

@@ -258,7 +258,7 @@ export class GoogleDriveAdapter implements IntegrationAdapter {
     throw new Error('Google Drive not authenticated');
   }
 
-  private async request(path: string): Promise<Record<string, unknown>> {
+  private async request(path: string): Promise<Record<string, any>> {
     const token = await this.getToken();
     const res = await fetch(`${DRIVE_API}${path}`, {
       headers: { Authorization: `Bearer ${token}` },

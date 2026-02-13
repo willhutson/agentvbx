@@ -176,14 +176,14 @@ export class ApiServer {
 
     this.app.get('/api/tenants/:id', auth, (req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const tenant = this.orchestrator.getTenantManager().load(req.params.id);
+      const tenant = this.orchestrator.getTenantManager().load(String(req.params.id));
       if (!tenant) { res.status(404).json({ error: 'Tenant not found' }); return; }
       res.json(tenant);
     });
 
     this.app.patch('/api/tenants/:id', auth, (req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const updated = this.orchestrator.getTenantManager().update(req.params.id, req.body);
+      const updated = this.orchestrator.getTenantManager().update(String(req.params.id), req.body);
       if (!updated) { res.status(404).json({ error: 'Tenant not found' }); return; }
       res.json(updated);
     });
@@ -198,7 +198,7 @@ export class ApiServer {
 
     this.app.get('/api/agents/:name', auth, (req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const agent = this.orchestrator.getRouter().getAgent(req.params.name);
+      const agent = this.orchestrator.getRouter().getAgent(String(req.params.name));
       if (!agent) { res.status(404).json({ error: 'Agent not found' }); return; }
       res.json(agent);
     });
@@ -230,11 +230,11 @@ export class ApiServer {
       if (!tenant_id) { res.status(400).json({ error: 'tenant_id is required' }); return; }
       try {
         const executionId = await this.orchestrator.runRecipe(
-          req.params.name, tenant_id, number_id ?? 'default', input,
+          String(req.params.name), tenant_id, number_id ?? 'default', input,
         );
         this.broadcast({
           type: 'recipe:started',
-          data: { execution_id: executionId, recipe: req.params.name, tenant_id },
+          data: { execution_id: executionId, recipe: String(req.params.name), tenant_id },
           timestamp: new Date().toISOString(),
         });
         res.status(202).json({ execution_id: executionId });
@@ -245,14 +245,14 @@ export class ApiServer {
 
     this.app.get('/api/recipes/executions/:id', auth, (_req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const execution = this.orchestrator.getRecipeEngine().getExecution(_req.params.id);
+      const execution = this.orchestrator.getRecipeEngine().getExecution(String(_req.params.id));
       if (!execution) { res.status(404).json({ error: 'Execution not found' }); return; }
       res.json(execution);
     });
 
     this.app.delete('/api/recipes/executions/:id', auth, (_req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const cancelled = this.orchestrator.getRecipeEngine().cancel(_req.params.id);
+      const cancelled = this.orchestrator.getRecipeEngine().cancel(String(_req.params.id));
       if (!cancelled) { res.status(404).json({ error: 'Execution not found or not running' }); return; }
       res.json({ cancelled: true });
     });
@@ -279,7 +279,7 @@ export class ApiServer {
 
     this.app.get('/api/browser/sessions/:tenantId', auth, (req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const sessions = this.orchestrator.getBrowserSessionsByTenant(req.params.tenantId);
+      const sessions = this.orchestrator.getBrowserSessionsByTenant(String(req.params.tenantId));
       res.json(sessions);
     });
 
@@ -303,10 +303,10 @@ export class ApiServer {
 
     this.app.delete('/api/browser/sessions/:tenantId/:providerId', auth, async (req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      await this.orchestrator.closeBrowserSession(req.params.tenantId, req.params.providerId);
+      await this.orchestrator.closeBrowserSession(String(req.params.tenantId), String(req.params.providerId));
       this.broadcast({
         type: 'browser:session_closed',
-        data: { tenant_id: req.params.tenantId, provider_id: req.params.providerId },
+        data: { tenant_id: String(req.params.tenantId), provider_id: String(req.params.providerId) },
         timestamp: new Date().toISOString(),
       });
       res.json({ closed: true });
@@ -343,18 +343,16 @@ export class ApiServer {
     // ── Marketplace ──
     this.app.get('/api/marketplace/recipes', auth, (_req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const { category, sort, search } = _req.query;
-      const recipes = this.orchestrator.getMarketplaceRecipes(
-        category as string | undefined,
-        sort as string | undefined,
-        search as string | undefined,
-      );
+      const category = _req.query.category as string | undefined;
+      const sort = _req.query.sort as string | undefined;
+      const search = _req.query.search as string | undefined;
+      const recipes = this.orchestrator.getMarketplaceRecipes(category, sort, search);
       res.json(recipes);
     });
 
     this.app.get('/api/marketplace/recipes/:id', auth, (req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const recipe = this.orchestrator.getMarketplaceRecipe(req.params.id);
+      const recipe = this.orchestrator.getMarketplaceRecipe(String(req.params.id));
       if (!recipe) { res.status(404).json({ error: 'Recipe not found' }); return; }
       res.json(recipe);
     });
@@ -370,9 +368,9 @@ export class ApiServer {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
       const { tenant_id } = req.body;
       if (!tenant_id) { res.status(400).json({ error: 'tenant_id is required' }); return; }
-      const installed = this.orchestrator.installRecipe(req.params.id, tenant_id);
+      const installed = this.orchestrator.installRecipe(String(req.params.id), tenant_id);
       if (!installed) { res.status(404).json({ error: 'Recipe not found' }); return; }
-      res.json({ installed: true, recipe_id: req.params.id });
+      res.json({ installed: true, recipe_id: String(req.params.id) });
     });
 
     // ── Analytics ──
@@ -383,8 +381,9 @@ export class ApiServer {
 
     this.app.get('/api/analytics/usage/:tenantId', auth, (req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const { from, to } = req.query;
-      res.json(this.orchestrator.getTenantUsage(req.params.tenantId, from as string, to as string));
+      const from = req.query.from as string | undefined;
+      const to = req.query.to as string | undefined;
+      res.json(this.orchestrator.getTenantUsage(String(req.params.tenantId), from, to));
     });
 
     this.app.get('/api/analytics/costs', auth, (_req, res) => {
@@ -395,14 +394,14 @@ export class ApiServer {
     // ── White-label ──
     this.app.get('/api/whitelabel/:tenantId', auth, (req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const config = this.orchestrator.getWhitelabelConfig(req.params.tenantId);
+      const config = this.orchestrator.getWhitelabelConfig(String(req.params.tenantId));
       if (!config) { res.status(404).json({ error: 'No whitelabel config' }); return; }
       res.json(config);
     });
 
     this.app.put('/api/whitelabel/:tenantId', auth, (req, res) => {
       if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
-      const config = this.orchestrator.setWhitelabelConfig(req.params.tenantId, req.body);
+      const config = this.orchestrator.setWhitelabelConfig(String(req.params.tenantId), req.body);
       res.json(config);
     });
 

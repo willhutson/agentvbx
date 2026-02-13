@@ -208,7 +208,7 @@ export class MondayAdapter implements IntegrationAdapter {
 
   // ─── Private ──────────────────────────────────────────────────────────
 
-  private async query(query: string): Promise<Record<string, unknown>> {
+  private async query(query: string): Promise<Record<string, any>> {
     if (!this.apiKey) throw new Error('Monday.com not authenticated');
 
     const res = await fetch(MONDAY_API, {
