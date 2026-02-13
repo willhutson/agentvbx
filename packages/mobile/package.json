@@ -1,0 +1,10 @@
+{
+  "name": "@agentvbx/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AGENTVBX Progressive Web App — mobile-first dashboard and chat",
+  "scripts": {
+    "dev": "npx serve public -l 5174",
+    "build": "echo 'PWA static files — no build step required'"
+  }
+}

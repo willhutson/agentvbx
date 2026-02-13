@@ -7,12 +7,13 @@ Send a WhatsApp message. Get an AI-powered response from Claude, ChatGPT, DeepSe
 ## How It Works
 
 ```
-You (WhatsApp / Voice / SMS / App)
+You (WhatsApp / Voice / SMS / Mobile PWA / Desktop App)
   → AGENTVBX Orchestrator
-    → Routes to the right Agent (Researcher, Writer, Coder, Strategist...)
-      → Dispatches to the best Provider (Anthropic, OpenAI, DeepSeek, Ollama)
-        → Delivers artifacts (Google Drive, GitHub, Notion)
-          → Notifies you (WhatsApp with preview link)
+    → Rate Limiter (tier-based quota enforcement)
+      → Routes to the right Agent (Researcher, Writer, Coder, Strategist...)
+        → Dispatches to the best Provider (Anthropic, OpenAI, DeepSeek, Ollama)
+          → Delivers artifacts (Google Drive, GitHub, Notion)
+            → Tracks analytics → Notifies you (WhatsApp with preview link)
 ```
 
 One message in, structured output back — across any channel.
@@ -25,7 +26,7 @@ git clone https://github.com/willhutson/agentvbx.git
 cd agentvbx
 npm install
 npm run build
-npm test              # 45 tests passing
+npm test              # 64 tests passing
 
 # Start the API server
 npm run dev
@@ -45,22 +46,36 @@ curl -X POST http://localhost:3000/api/messages \
   }'
 ```
 
+### Docker
+
+```bash
+docker compose up -d                    # Start API + Redis
+docker compose --profile gpu up -d      # With GPU Ollama
+docker compose --profile cpu up -d      # With CPU Ollama
+```
+
 ## Architecture
 
 ```
 agentvbx/
 ├── packages/
-│   ├── orchestrator/      # Core brain — queue, router, recipes, tenants, artifacts
+│   ├── orchestrator/      # Core brain — queue, router, recipes, tenants, artifacts,
+│   │                      # marketplace, analytics, rate limiter, white-label
 │   ├── providers/         # Provider registry (21+), Model Genie, adapters
-│   ├── api/               # REST API + WebSocket server
+│   ├── api/               # REST API + WebSocket (30+ endpoints)
 │   ├── whatsapp/          # WhatsApp channel (WWeb.js + House Channel)
 │   ├── voice/             # Telnyx Voice AI, SMS, transcription
-│   ├── agent-browser/     # Playwright sessions for BYOA
-│   └── integrations/      # Google Drive, Monday.com, Notion, GitHub
+│   ├── agent-browser/     # Playwright BYOA — task runner, health monitor, re-auth
+│   ├── integrations/      # Google Drive, Monday.com, Notion, GitHub, Meta Ads
+│   └── mobile/            # Progressive Web App (PWA)
 ├── config/
 │   ├── agents/            # 7 agent blueprints (YAML)
 │   └── recipes/           # Workflow templates (YAML)
+├── recipes/               # 6 community/example recipes
 ├── packages/desktop/      # Tauri v2 desktop app
+├── .github/workflows/     # CI/CD pipeline
+├── Dockerfile             # Multi-stage production build
+├── docker-compose.yml     # API + Redis + Ollama
 └── docs/                  # API manual + sandbox
 ```
 
@@ -68,13 +83,14 @@ agentvbx/
 
 | Package | What It Does |
 |---------|-------------|
-| **orchestrator** | Redis Streams message queue with 3 priority lanes (voice > chat > background). Keyword/channel/tool routing engine. Sequential recipe execution with human approval gates. Multi-tenant isolation. Artifact capture/upload/notify pipeline. |
+| **orchestrator** | Redis Streams message queue with 3 priority lanes (voice > chat > background). Keyword/channel/tool routing engine. Sequential recipe execution with human approval gates. Multi-tenant isolation. Artifact capture/upload/notify pipeline. Recipe marketplace. Analytics engine. Tier-based rate limiter. White-label config. |
 | **providers** | 21+ provider registry with YAML catalog. Model Genie recommends tools based on user intent. Adapters: Ollama (local), Anthropic Claude, OpenAI ChatGPT, DeepSeek. `AdapterManager` handles fallback chains. |
-| **api** | Express REST API for all CRUD operations. WebSocket for real-time events (message:routed, message:completed, recipe:started). CORS enabled. Optional API key auth. |
+| **api** | Express REST API with 30+ endpoints. WebSocket for real-time events. Browser session management. Marketplace CRUD. Analytics queries. White-label config. |
 | **whatsapp** | WWeb.js client with QR auth. `WhatsAppBridge` normalizes messages → queue → route → respond. House Channel for broadcasts with relevance scoring. |
 | **voice** | Telnyx client for number provisioning, Voice AI, call control, SMS. `VoiceBridge` handles inbound calls → answer → Voice AI → transcribe → queue. Transcription routing: Whisper (free) → Deepgram Nova-3 (pro). |
-| **agent-browser** | Playwright persistent contexts for BYOA (Bring Your Own Account). Session health monitoring, cookie persistence, multi-tenant isolation. |
-| **integrations** | Unified `IntegrationAdapter` interface. Google Drive (OAuth2, file ops, sharing). Monday.com (GraphQL, board/item CRUD). Notion (pages, databases). GitHub (repos, files, issues, commits). |
+| **agent-browser** | Playwright persistent contexts for BYOA (Bring Your Own Account). Task runner with provider-specific UI scripts. Health monitoring with re-auth flows. Supports ChatGPT, Claude, Gemini, Perplexity, Midjourney, Lovable. |
+| **integrations** | Unified `IntegrationAdapter` interface. Google Drive (OAuth2, file ops, sharing). Monday.com (GraphQL, board/item CRUD). Notion (pages, databases). GitHub (repos, files, issues, commits). Meta Ads (campaigns, audiences, lead forms, webhooks). |
+| **mobile** | Progressive Web App with service worker, offline support, push notifications. 4-tab layout: Dashboard, Chat, Recipes, Settings. |
 
 ## Agents
 
@@ -119,27 +135,37 @@ system_prompt: |
 
 Recipes are multi-step workflows. Each step can use a different agent, integration, or notification.
 
-### Voice-to-Structured-Data
+### Built-in Recipes
 
-```
-Voice note → Transcribe → Extract fields → Human confirm → Monday.com → WhatsApp notify
-```
-
-### Research & Deliver
-
-```
-Topic → Deep research (Claude) → Write report → Google Drive upload → WhatsApp link
-```
+| Recipe | Trigger | Flow |
+|--------|---------|------|
+| **Research & Deliver** | Manual | Topic → Deep research → Write report → Google Drive → WhatsApp link |
+| **Voice-to-Structured-Data** | Voice note | Transcribe → Extract fields → Human confirm → Monday.com → WhatsApp |
+| **Monday Morning Briefing** | Schedule (Mon 9am) | Pull updates → Summarize → Voice-note-style delivery |
+| **Social Video Pipeline** | Manual | Script → Storyboard → Generate video → Upload → Notify |
+| **Meta Lead Nurture** | Meta Ads webhook | Capture lead → Research company → Craft personalized WhatsApp → Log to CRM |
+| **Content Calendar** | Schedule (Mon 9am) | Research trends → Generate calendar → Write posts → Review gate → Drive + Notion |
 
 ### Recipe Step Types
 
 | Type | Description |
 |------|-------------|
 | `agent` | Send to an LLM via the adapter manager |
-| `integration_read` | Read from a platform (Drive, Monday, Notion) |
+| `integration_read` | Read from a platform (Drive, Monday, Notion, Meta Ads) |
 | `integration_write` | Write to a platform |
 | `artifact_delivery` | Save file → upload to cloud → send notification |
 | `notification` | Send message via WhatsApp, SMS, or app |
+
+## Recipe Marketplace
+
+Publish, discover, install, and fork recipes across the platform.
+
+- **Publish** recipes with pricing (free, one-time, subscription)
+- **Search** by category, tags, or keywords
+- **Sort** by popularity, rating, or newest
+- **Fork** any recipe to customize for your workflow
+- **Rate** recipes (1-5 stars)
+- **Version** tracking with automatic bumps
 
 ## Provider Adapters
 
@@ -150,33 +176,18 @@ Topic → Deep research (Claude) → Write report → Google Drive upload → Wh
 | **OpenAI** | Chat Completions | GPT-4o, vision, organization support. |
 | **DeepSeek** | OpenAI-compatible | DeepSeek-V3, reasoning, code. |
 
-Adapters implement a shared interface. Adding a new one:
+### Browser BYOA Providers
 
-```typescript
-class MyAdapter implements ProviderAdapter {
-  readonly id = 'my-provider';
-  readonly name = 'My Provider';
-  async isAvailable(): Promise<boolean> { /* health check */ }
-  async send(request: AdapterRequest): Promise<AdapterResponse> { /* call API */ }
-  async initialize(): Promise<void> { /* setup */ }
-  async destroy(): Promise<void> { /* cleanup */ }
-}
-```
+The agent-browser package automates these provider web UIs directly:
 
-## API
-
-Full interactive documentation: **[docs/api-manual.html](docs/api-manual.html)**
-
-Key endpoints:
-
-```
-GET  /api/health                    System health + queue stats
-POST /api/tenants                   Create a tenant
-POST /api/messages                  Send a message to the queue
-POST /api/recipes/:name/execute     Execute a recipe
-GET  /api/agents                    List registered agents
-WS   /ws                            Real-time event stream
-```
+| Provider | Capabilities |
+|----------|-------------|
+| **ChatGPT** | Chat, artifacts, code execution |
+| **Claude** | Chat, artifacts, document analysis |
+| **Gemini** | Chat, image generation |
+| **Perplexity** | Search, citations |
+| **Midjourney** | Image generation (5-min timeout) |
+| **Lovable** | App building, code generation |
 
 ## Platform Integrations
 
@@ -186,6 +197,58 @@ WS   /ws                            Real-time event stream
 | **Monday.com** | Board/item CRUD via GraphQL, voice-to-board recipes |
 | **Notion** | Page/database CRUD, knowledge base, meeting notes |
 | **GitHub** | File commits, issue creation, code artifact storage |
+| **Meta Ads** | Campaign creation, audience targeting, lead forms, ROAS tracking, webhook processing |
+
+## Multi-Tenant Scaling
+
+5-tier system with per-tenant rate limiting:
+
+| Tier | Messages/min | Messages/day | Browser Sessions | Recipes/hr |
+|------|-------------|-------------|-----------------|-----------|
+| Free | 5 | 50 | 1 | 3 |
+| Starter | 20 | 500 | 3 | 20 |
+| Pro | 60 | 5,000 | 10 | 100 |
+| Business | 200 | 50,000 | 50 | 500 |
+| Agency | 1,000 | 500,000 | 200 | 5,000 |
+
+## Analytics
+
+- Per-tenant usage tracking (messages, recipes, tokens, costs)
+- Provider cost calculation with real rate tables
+- Daily cost breakdowns by provider and tenant
+- Top providers and agents dashboards
+
+## White-Label
+
+Business and Agency tier tenants can fully customize:
+
+- Brand name, logo, tagline, favicon
+- Color theme (primary, secondary, accent, background, surface, text)
+- Custom fonts and border radius
+- Custom domain / subdomain
+- Email branding (from name, reply-to, footer)
+- Feature toggles (hide AGENTVBX branding, custom login page)
+
+## API
+
+Full interactive documentation: **[docs/api-manual.html](docs/api-manual.html)**
+
+30+ endpoints across 9 categories:
+
+```
+GET  /api/health                              System health + queue stats
+POST /api/tenants                             Create a tenant
+POST /api/messages                            Send a message to the queue
+POST /api/recipes/:name/execute               Execute a recipe
+GET  /api/agents                              List registered agents
+GET  /api/browser/sessions                    List browser sessions
+POST /api/browser/reauth                      Request re-authentication
+GET  /api/marketplace/recipes                 Browse recipe marketplace
+GET  /api/analytics/overview                  System-wide analytics
+GET  /api/analytics/costs                     Cost breakdown
+PUT  /api/whitelabel/:tenantId                Set white-label config
+WS   /ws                                      Real-time event stream
+```
 
 ## Transcription Tiers
 
@@ -201,7 +264,7 @@ WS   /ws                            Real-time event stream
 ```bash
 npm install              # Install all workspace dependencies
 npm run build            # Build all packages
-npm test                 # Run all tests (Vitest)
+npm test                 # Run all 64 tests (Vitest)
 npm run dev              # Start API server in dev mode
 npm run dev:orchestrator # Start orchestrator in dev mode
 npm run clean            # Remove all dist/ directories
@@ -211,9 +274,10 @@ npm run clean            # Remove all dist/ directories
 
 - **Config**: YAML files in `config/agents/` and `config/recipes/`
 - **Types**: `packages/orchestrator/src/types.ts` — all core interfaces
-- **Tests**: Vitest, 45+ tests across 5 suites
+- **Tests**: Vitest, 64 tests across 8 suites
 - **Logging**: Pino structured JSON logging
 - **Queue**: Redis Streams with consumer groups (at-least-once delivery)
+- **CI/CD**: GitHub Actions (lint → test → build → Docker push to GHCR)
 
 ## Roadmap
 
@@ -221,9 +285,9 @@ npm run clean            # Remove all dist/ directories
 - [x] Phase 2: Admin API, message dispatch, provider adapters (Anthropic/OpenAI/DeepSeek)
 - [x] Phase 3: WhatsApp bridge, voice bridge, recipes, agent configs
 - [x] Phase 4: Google Drive, Monday.com, Notion, GitHub, artifact pipeline
-- [ ] Phase 5: Browser BYOA automation, session health, re-auth flows
-- [ ] Phase 6: Recipe marketplace, multi-tenant at scale, CI/CD, Docker
-- [ ] Phase 7: Mobile app, Meta Ads funnel, analytics, white-label
+- [x] Phase 5: Browser BYOA automation, session health, re-auth flows
+- [x] Phase 6: Recipe marketplace, multi-tenant at scale, CI/CD, Docker
+- [x] Phase 7: Mobile PWA, Meta Ads funnel, analytics, white-label
 
 ## License
 

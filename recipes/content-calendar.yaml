@@ -1,0 +1,60 @@
+name: content-calendar
+description: >
+  Generates a weekly content calendar with social posts, blog outlines,
+  and video scripts. Saves to Google Drive and posts schedule to Notion.
+trigger:
+  type: schedule
+  cron: "0 9 * * MON"
+
+steps:
+  - name: research-trends
+    type: agent
+    agent: researcher
+    input: content_brief
+    output: trend_research
+    params:
+      prompt: "Find top 5 trending topics in our industry this week. Include keywords and angles."
+
+  - name: generate-calendar
+    type: agent
+    agent: strategist
+    input: trend_research
+    output: content_plan
+    params:
+      prompt: "Create a 5-day content calendar with: 1 blog post, 5 social posts, 2 video scripts."
+      temperature: 0.8
+
+  - name: write-posts
+    type: agent
+    agent: writer
+    input: content_plan
+    output: written_content
+    params:
+      prompt: "Write all the social media posts and blog outline from the content plan."
+
+  - name: review
+    type: agent
+    agent: creative-director
+    input: written_content
+    output: reviewed_content
+    gate: human_approval
+    params:
+      prompt: "Review content for brand voice, accuracy, and engagement potential."
+
+  - name: save-to-drive
+    type: artifact_delivery
+    input: reviewed_content
+    output: drive_file
+    params:
+      filename: "content-calendar-{{date}}.md"
+      destination: google_drive
+      folder: "Content/Weekly"
+
+  - name: update-notion
+    type: integration_write
+    integration: notion
+    action: create_page
+    input: [reviewed_content, drive_file]
+    output: notion_page
+    params:
+      database: content_calendar

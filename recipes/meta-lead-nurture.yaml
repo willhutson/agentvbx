@@ -1,0 +1,52 @@
+name: meta-lead-nurture
+description: >
+  Captures leads from Meta Ads lead forms, enriches them via research agent,
+  sends a personalized WhatsApp message, and logs to Monday.com CRM board.
+trigger:
+  type: platform_event
+  platform: meta_ads
+  event: leadgen
+  filter: "form_id:*"
+
+steps:
+  - name: capture-lead
+    type: integration_read
+    integration: meta_ads
+    action: get_lead_data
+    input: trigger_data
+    output: lead_data
+
+  - name: research-company
+    type: agent
+    agent: researcher
+    input: lead_data
+    output: company_research
+    params:
+      prompt: "Research this company and contact. Summarize in 3 bullet points."
+
+  - name: craft-message
+    type: agent
+    agent: writer
+    input: [lead_data, company_research]
+    output: personalized_message
+    params:
+      prompt: "Write a brief, friendly WhatsApp message to this lead. Reference their company. Keep under 160 chars."
+      temperature: 0.7
+
+  - name: send-whatsapp
+    type: notification
+    channel: whatsapp
+    input: personalized_message
+    output: message_sent
+    params:
+      delay_seconds: 30
+
+  - name: log-to-crm
+    type: integration_write
+    integration: monday
+    action: create_item
+    input: [lead_data, company_research, message_sent]
+    output: crm_entry
+    params:
+      board: leads
+      group: meta_ads

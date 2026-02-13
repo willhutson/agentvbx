@@ -619,6 +619,61 @@
   </div>
 
   <div class="nav-group">
+    <div class="nav-group-title">Browser Sessions</div>
+    <a class="nav-item" href="#get-browser-sessions" onclick="scrollToSection(event, 'get-browser-sessions')">
+      <span class="method-badge method-GET">GET</span> /api/browser/sessions
+    </a>
+    <a class="nav-item" href="#post-browser-session" onclick="scrollToSection(event, 'post-browser-session')">
+      <span class="method-badge method-POST">POST</span> /api/browser/sessions
+    </a>
+    <a class="nav-item" href="#get-browser-health" onclick="scrollToSection(event, 'get-browser-health')">
+      <span class="method-badge method-GET">GET</span> /api/browser/health
+    </a>
+    <a class="nav-item" href="#post-browser-reauth" onclick="scrollToSection(event, 'post-browser-reauth')">
+      <span class="method-badge method-POST">POST</span> /api/browser/reauth
+    </a>
+    <a class="nav-item" href="#get-browser-scripts" onclick="scrollToSection(event, 'get-browser-scripts')">
+      <span class="method-badge method-GET">GET</span> /api/browser/scripts
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Marketplace</div>
+    <a class="nav-item" href="#get-marketplace" onclick="scrollToSection(event, 'get-marketplace')">
+      <span class="method-badge method-GET">GET</span> /api/marketplace/recipes
+    </a>
+    <a class="nav-item" href="#post-marketplace" onclick="scrollToSection(event, 'post-marketplace')">
+      <span class="method-badge method-POST">POST</span> /api/marketplace/recipes
+    </a>
+    <a class="nav-item" href="#post-marketplace-install" onclick="scrollToSection(event, 'post-marketplace-install')">
+      <span class="method-badge method-POST">POST</span> /api/marketplace/.../install
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Analytics</div>
+    <a class="nav-item" href="#get-analytics-overview" onclick="scrollToSection(event, 'get-analytics-overview')">
+      <span class="method-badge method-GET">GET</span> /api/analytics/overview
+    </a>
+    <a class="nav-item" href="#get-analytics-usage" onclick="scrollToSection(event, 'get-analytics-usage')">
+      <span class="method-badge method-GET">GET</span> /api/analytics/usage/:tenantId
+    </a>
+    <a class="nav-item" href="#get-analytics-costs" onclick="scrollToSection(event, 'get-analytics-costs')">
+      <span class="method-badge method-GET">GET</span> /api/analytics/costs
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">White-Label</div>
+    <a class="nav-item" href="#get-whitelabel" onclick="scrollToSection(event, 'get-whitelabel')">
+      <span class="method-badge method-GET">GET</span> /api/whitelabel/:tenantId
+    </a>
+    <a class="nav-item" href="#put-whitelabel" onclick="scrollToSection(event, 'put-whitelabel')">
+      <span class="method-badge method-PATCH">PUT</span> /api/whitelabel/:tenantId
+    </a>
+  </div>
+
+  <div class="nav-group">
     <div class="nav-group-title">Real-Time</div>
     <a class="nav-item" href="#ws-panel" onclick="scrollToSection(event, 'ws-panel')">
       <span class="method-badge method-WS">WS</span> /ws
@@ -631,7 +686,7 @@
 
   <!-- Introduction -->
   <section id="introduction">
-    <h1>AGENTVBX API <small>v0.2.0</small></h1>
+    <h1>AGENTVBX API <small>v0.5.0</small></h1>
     <p class="intro-text">
       The AGENTVBX REST API provides complete control over the orchestration layer — tenants, agents, messages, recipes, providers, and system state. All endpoints return JSON. Real-time events are available via WebSocket at <code>/ws</code>.
     </p>
@@ -1428,6 +1483,380 @@
             <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/processes')">Send Request</button>
           </div>
           <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  BROWSER SESSIONS                                                    -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>Browser Sessions</h2>
+
+  <div class="section-intro">
+    <h4>BYOA Browser Automation</h4>
+    <p>
+      Manage persistent Playwright browser sessions for AI provider web UIs (Bring Your Own Account).
+      Sessions are isolated per-tenant, per-provider. The health monitor detects expired sessions and
+      triggers re-authentication flows.
+    </p>
+  </div>
+
+  <section id="get-browser-sessions">
+    <div class="endpoint" data-method="GET" data-path="/api/browser/sessions">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/browser/sessions</span>
+        <h4>List All Browser Sessions</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns all active browser sessions across all tenants.</p>
+        <div class="example-block">
+          <div class="example-label">Response 200</div>
+          <pre class="example-code">[
+  {
+    "id": "tenant-1:chatgpt",
+    "tenant_id": "tenant-1",
+    "provider_id": "chatgpt",
+    "status": "idle",
+    "cookies_valid": true,
+    "last_activity": "2026-02-13T08:30:00Z",
+    "created_at": "2026-02-13T07:00:00Z"
+  }
+]</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/browser/sessions')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="post-browser-session">
+    <div class="endpoint" data-method="POST" data-path="/api/browser/sessions">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-POST">POST</span>
+        <span class="endpoint-path">/api/browser/sessions</span>
+        <h4>Create Browser Session</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Launch a persistent browser context for a provider. The session will check authentication state on creation.</p>
+        <div class="example-block">
+          <div class="example-label">Request Body</div>
+          <pre class="example-code">{
+  "tenant_id": "tenant-1",
+  "provider_id": "chatgpt",
+  "provider_url": "https://chatgpt.com",
+  "headless": true
+}</pre>
+        </div>
+        <div class="example-block">
+          <div class="example-label">Response 201</div>
+          <pre class="example-code">{
+  "id": "tenant-1:chatgpt",
+  "tenant_id": "tenant-1",
+  "provider_id": "chatgpt",
+  "status": "idle",
+  "cookies_valid": true,
+  "last_activity": "2026-02-13T08:44:00Z",
+  "created_at": "2026-02-13T08:44:00Z"
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="get-browser-health">
+    <div class="endpoint" data-method="GET" data-path="/api/browser/health">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/browser/health</span>
+        <h4>Browser Session Health</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns health status for all browser sessions including auth state and idle time.</p>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/browser/health')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="post-browser-reauth">
+    <div class="endpoint" data-method="POST" data-path="/api/browser/reauth">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-POST">POST</span>
+        <span class="endpoint-path">/api/browser/reauth</span>
+        <h4>Request Re-Authentication</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Initiate a re-auth flow for an expired session. Generates a re-auth request that the user can complete via desktop app or secure link.</p>
+        <div class="example-block">
+          <div class="example-label">Request Body</div>
+          <pre class="example-code">{
+  "tenant_id": "tenant-1",
+  "provider_id": "chatgpt",
+  "method": "manual_browser"
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="get-browser-scripts">
+    <div class="endpoint" data-method="GET" data-path="/api/browser/scripts">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/browser/scripts</span>
+        <h4>List Provider Scripts</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns the list of available provider automation scripts (ChatGPT, Claude, Gemini, Perplexity, Midjourney, Lovable).</p>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/browser/scripts')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  MARKETPLACE                                                        -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>Marketplace</h2>
+
+  <div class="section-intro">
+    <h4>Recipe Marketplace</h4>
+    <p>
+      Browse, publish, install, and fork community recipes. Filter by category, sort by popularity/rating/newest, and search by keyword.
+    </p>
+  </div>
+
+  <section id="get-marketplace">
+    <div class="endpoint" data-method="GET" data-path="/api/marketplace/recipes">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/marketplace/recipes</span>
+        <h4>Browse Marketplace</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">List marketplace recipes with optional filtering. Query params: <code>category</code>, <code>sort</code> (popular|rating|newest), <code>search</code>.</p>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/marketplace/recipes')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="post-marketplace">
+    <div class="endpoint" data-method="POST" data-path="/api/marketplace/recipes">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-POST">POST</span>
+        <span class="endpoint-path">/api/marketplace/recipes</span>
+        <h4>Publish Recipe</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Publish a recipe to the marketplace. Includes pricing, category, tags, and the full recipe definition.</p>
+        <div class="example-block">
+          <div class="example-label">Request Body</div>
+          <pre class="example-code">{
+  "recipe": { "name": "my-workflow", "description": "...", "steps": [...] },
+  "creator": "my-org",
+  "title": "My Workflow",
+  "description": "Automates X, Y, and Z",
+  "category": "automation",
+  "tags": ["marketing", "crm"],
+  "pricing": { "type": "free" }
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="post-marketplace-install">
+    <div class="endpoint" data-method="POST" data-path="/api/marketplace/recipes/:id/install">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-POST">POST</span>
+        <span class="endpoint-path">/api/marketplace/recipes/:id/install</span>
+        <h4>Install Recipe</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Install a marketplace recipe for your tenant. Requires <code>tenant_id</code> in the body.</p>
+        <div class="example-block">
+          <div class="example-label">Request Body</div>
+          <pre class="example-code">{ "tenant_id": "my-tenant-id" }</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  ANALYTICS                                                          -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>Analytics</h2>
+
+  <div class="section-intro">
+    <h4>Usage &amp; Cost Analytics</h4>
+    <p>
+      Track system-wide and per-tenant usage metrics including message counts, token consumption, provider costs, and performance data.
+    </p>
+  </div>
+
+  <section id="get-analytics-overview">
+    <div class="endpoint" data-method="GET" data-path="/api/analytics/overview">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/analytics/overview</span>
+        <h4>Analytics Overview</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">System-wide analytics: total tenants, messages today, cost today, top providers, top agents, queue health.</p>
+        <div class="example-block">
+          <div class="example-label">Response 200</div>
+          <pre class="example-code">{
+  "total_tenants": 12,
+  "total_messages_today": 843,
+  "total_recipes_today": 27,
+  "total_cost_today_usd": 4.23,
+  "active_browser_sessions": 5,
+  "top_providers": [
+    { "provider": "anthropic", "usage": 412, "cost_usd": 2.85 },
+    { "provider": "ollama", "usage": 301, "cost_usd": 0 }
+  ],
+  "top_agents": [
+    { "agent": "writer", "messages": 198 },
+    { "agent": "researcher", "messages": 156 }
+  ]
+}</pre>
+        </div>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/analytics/overview')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="get-analytics-usage">
+    <div class="endpoint" data-method="GET" data-path="/api/analytics/usage/:tenantId">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/analytics/usage/:tenantId</span>
+        <h4>Tenant Usage</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Detailed usage summary for a specific tenant. Optional query params: <code>from</code>, <code>to</code> (ISO dates).</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="get-analytics-costs">
+    <div class="endpoint" data-method="GET" data-path="/api/analytics/costs">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/analytics/costs</span>
+        <h4>Cost Breakdown</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Cost breakdown by provider, by tenant, and daily totals for the last 30 days.</p>
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">Sandbox</span>
+            <button class="sandbox-send" onclick="sendRequest(this, 'GET', '/api/analytics/costs')">Send Request</button>
+          </div>
+          <div class="sandbox-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--  WHITE-LABEL                                                        -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+
+  <h2>White-Label</h2>
+
+  <div class="section-intro">
+    <h4>Tenant Branding</h4>
+    <p>
+      Business and Agency tier tenants can fully customize branding: logo, colors, fonts, domains, and feature toggles.
+    </p>
+  </div>
+
+  <section id="get-whitelabel">
+    <div class="endpoint" data-method="GET" data-path="/api/whitelabel/:tenantId">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-GET">GET</span>
+        <span class="endpoint-path">/api/whitelabel/:tenantId</span>
+        <h4>Get White-Label Config</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returns the white-label configuration for a tenant including brand, theme, domain, email, and feature toggles.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="put-whitelabel">
+    <div class="endpoint" data-method="PUT" data-path="/api/whitelabel/:tenantId">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge method-PATCH">PUT</span>
+        <span class="endpoint-path">/api/whitelabel/:tenantId</span>
+        <h4>Set White-Label Config</h4>
+        <span class="endpoint-toggle">&#9654;</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Create or update white-label branding for a tenant. Partial updates merge with existing config.</p>
+        <div class="example-block">
+          <div class="example-label">Request Body</div>
+          <pre class="example-code">{
+  "brand": {
+    "name": "My Agency",
+    "tagline": "AI-powered business automation",
+    "logo_url": "https://example.com/logo.png"
+  },
+  "theme": {
+    "primary_color": "#ff6b35",
+    "accent_color": "#00d4aa",
+    "background": "#0d0d0d"
+  },
+  "features": {
+    "hide_agentvbx_branding": true,
+    "custom_login_page": true
+  }
+}</pre>
         </div>
       </div>
     </div>

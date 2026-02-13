@@ -270,12 +270,148 @@ export class ApiServer {
       res.json(this.orchestrator.getSupervisor().getStatus());
     });
 
+    // ── Browser Sessions ──
+    this.app.get('/api/browser/sessions', auth, (_req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const sessions = this.orchestrator.getBrowserSessions();
+      res.json(sessions);
+    });
+
+    this.app.get('/api/browser/sessions/:tenantId', auth, (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const sessions = this.orchestrator.getBrowserSessionsByTenant(req.params.tenantId);
+      res.json(sessions);
+    });
+
+    this.app.post('/api/browser/sessions', auth, async (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const { tenant_id, provider_id, provider_url, headless } = req.body;
+      if (!tenant_id || !provider_id) {
+        res.status(400).json({ error: 'tenant_id and provider_id are required' });
+        return;
+      }
+      try {
+        const session = await this.orchestrator.createBrowserSession({
+          tenant_id, provider_id, provider_url, headless,
+        });
+        this.broadcast({ type: 'browser:session_created', data: session, timestamp: new Date().toISOString() });
+        res.status(201).json(session);
+      } catch (err) {
+        res.status(500).json({ error: err instanceof Error ? err.message : 'Session creation failed' });
+      }
+    });
+
+    this.app.delete('/api/browser/sessions/:tenantId/:providerId', auth, async (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      await this.orchestrator.closeBrowserSession(req.params.tenantId, req.params.providerId);
+      this.broadcast({
+        type: 'browser:session_closed',
+        data: { tenant_id: req.params.tenantId, provider_id: req.params.providerId },
+        timestamp: new Date().toISOString(),
+      });
+      res.json({ closed: true });
+    });
+
+    this.app.get('/api/browser/health', auth, async (_req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const health = await this.orchestrator.getBrowserHealth();
+      res.json(health);
+    });
+
+    this.app.post('/api/browser/reauth', auth, async (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const { tenant_id, provider_id, method } = req.body;
+      if (!tenant_id || !provider_id) {
+        res.status(400).json({ error: 'tenant_id and provider_id are required' });
+        return;
+      }
+      try {
+        const request = await this.orchestrator.requestBrowserReauth(tenant_id, provider_id, method);
+        this.broadcast({ type: 'browser:reauth_requested', data: request, timestamp: new Date().toISOString() });
+        res.status(202).json(request);
+      } catch (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : 'Re-auth failed' });
+      }
+    });
+
+    this.app.get('/api/browser/scripts', auth, (_req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const scripts = this.orchestrator.getAvailableBrowserScripts();
+      res.json(scripts);
+    });
+
+    // ── Marketplace ──
+    this.app.get('/api/marketplace/recipes', auth, (_req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const { category, sort, search } = _req.query;
+      const recipes = this.orchestrator.getMarketplaceRecipes(
+        category as string | undefined,
+        sort as string | undefined,
+        search as string | undefined,
+      );
+      res.json(recipes);
+    });
+
+    this.app.get('/api/marketplace/recipes/:id', auth, (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const recipe = this.orchestrator.getMarketplaceRecipe(req.params.id);
+      if (!recipe) { res.status(404).json({ error: 'Recipe not found' }); return; }
+      res.json(recipe);
+    });
+
+    this.app.post('/api/marketplace/recipes', auth, (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const published = this.orchestrator.publishRecipe(req.body);
+      this.broadcast({ type: 'marketplace:recipe_published', data: published, timestamp: new Date().toISOString() });
+      res.status(201).json(published);
+    });
+
+    this.app.post('/api/marketplace/recipes/:id/install', auth, (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const { tenant_id } = req.body;
+      if (!tenant_id) { res.status(400).json({ error: 'tenant_id is required' }); return; }
+      const installed = this.orchestrator.installRecipe(req.params.id, tenant_id);
+      if (!installed) { res.status(404).json({ error: 'Recipe not found' }); return; }
+      res.json({ installed: true, recipe_id: req.params.id });
+    });
+
+    // ── Analytics ──
+    this.app.get('/api/analytics/overview', auth, (_req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      res.json(this.orchestrator.getAnalyticsOverview());
+    });
+
+    this.app.get('/api/analytics/usage/:tenantId', auth, (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const { from, to } = req.query;
+      res.json(this.orchestrator.getTenantUsage(req.params.tenantId, from as string, to as string));
+    });
+
+    this.app.get('/api/analytics/costs', auth, (_req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      res.json(this.orchestrator.getCostBreakdown());
+    });
+
+    // ── White-label ──
+    this.app.get('/api/whitelabel/:tenantId', auth, (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const config = this.orchestrator.getWhitelabelConfig(req.params.tenantId);
+      if (!config) { res.status(404).json({ error: 'No whitelabel config' }); return; }
+      res.json(config);
+    });
+
+    this.app.put('/api/whitelabel/:tenantId', auth, (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const config = this.orchestrator.setWhitelabelConfig(req.params.tenantId, req.body);
+      res.json(config);
+    });
+
     // ── System info ──
     this.app.get('/api/system', auth, async (_req, res) => {
       const health = this.orchestrator ? await this.orchestrator.getHealth() : null;
       res.json({
-        version: '0.2.0',
-        phase: 'Phase 2-4',
+        version: '0.5.0',
+        phase: 'Phase 5-7',
         uptime: process.uptime(),
         memory: process.memoryUsage(),
         health,

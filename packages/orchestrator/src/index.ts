@@ -56,6 +56,27 @@ export { ConfigLoader } from './config/index.js';
 export { ProcessSupervisor } from './process/index.js';
 export type { ProcessConfig } from './process/index.js';
 
+// Marketplace
+export { MarketplaceCatalog } from './marketplace/index.js';
+export type { MarketplaceEntry, PublishRequest, MarketplaceStats } from './marketplace/index.js';
+
+// Scaling
+export { RateLimiter, TIER_LIMITS } from './scaling/index.js';
+export type { TierLimits, UsageBucket, RateLimitResult } from './scaling/index.js';
+
+// Analytics
+export { AnalyticsEngine } from './analytics/index.js';
+export type {
+  UsageEvent,
+  TenantUsageSummary,
+  AnalyticsOverview,
+  CostBreakdown,
+} from './analytics/index.js';
+
+// White-label
+export { WhitelabelManager } from './whitelabel/index.js';
+export type { WhitelabelConfig } from './whitelabel/index.js';
+
 // Logger
 export { createLogger } from './logger.js';
 
