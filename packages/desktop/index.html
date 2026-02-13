@@ -1,325 +1,1210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AGENTVBX</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* ═══ Reset & Design Tokens ═══ */
     :root {
-      --bg: #0a0a0a; --surface: #111; --card: #151515; --border: #222;
-      --text: #e0e0e0; --muted: #888; --dim: #555;
-      --accent: #6c7aff; --accent-bg: #1a1a2e;
-      --green: #4ade80; --green-bg: #0a2a0a;
-      --yellow: #facc15; --yellow-bg: #2a2a0a;
-      --red: #f87171; --red-bg: #2a0a0a;
+      --bg-0: #08080d; --bg-1: #0f0f16; --bg-2: #16161f; --bg-3: #1e1e2a; --bg-4: #262635;
+      --border: #1e1e2e; --border-hover: #2e2e42;
+      --text-0: #f4f4f5; --text-1: #d4d4d8; --text-2: #a1a1aa; --text-3: #71717a;
+      --accent: #6366f1; --accent-hover: #818cf8; --accent-dim: rgba(99,102,241,.15);
+      --success: #22c55e; --success-dim: rgba(34,197,94,.15);
+      --warning: #f59e0b; --warning-dim: rgba(245,158,11,.15);
+      --danger: #ef4444; --danger-dim: rgba(239,68,68,.15);
+      --radius: 8px; --radius-sm: 4px; --radius-lg: 12px;
+      --font: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      --font-mono: 'JetBrains Mono','Fira Code',monospace;
+      --sidebar-w: 220px;
     }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-    }
-    .app { display: flex; height: 100vh; }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--font); font-size:13px; color:var(--text-1); background:var(--bg-0); overflow:hidden; height:100vh; -webkit-font-smoothing:antialiased; }
+    ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--bg-4); border-radius:3px; }
 
-    /* ── Sidebar ── */
-    .sidebar {
-      width: 240px; background: var(--surface); border-right: 1px solid var(--border);
-      padding: 16px; display: flex; flex-direction: column; flex-shrink: 0;
-    }
-    .sidebar h1 { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
-    .sidebar .version { font-size: 10px; color: var(--dim); margin-bottom: 20px; }
-    .nav-section { margin-bottom: 16px; }
-    .nav-section h3 {
-      font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px;
-      color: var(--dim); margin-bottom: 6px; padding: 0 8px;
-    }
-    .nav-item {
-      padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;
-      color: var(--muted); transition: all 0.1s; display: flex; align-items: center; gap: 8px;
-    }
-    .nav-item:hover { background: #1a1a1a; color: #fff; }
-    .nav-item.active { background: var(--accent-bg); color: var(--accent); }
-    .nav-count {
-      font-size: 10px; background: var(--border); padding: 1px 5px;
-      border-radius: 8px; margin-left: auto; font-variant-numeric: tabular-nums;
-    }
-    .sidebar-footer { margin-top: auto; font-size: 10px; color: var(--dim); padding: 8px; }
+    /* ═══ Layout ═══ */
+    .app { display:flex; height:100vh; }
+    .sidebar { width:var(--sidebar-w); background:var(--bg-1); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; overflow-y:auto; user-select:none; }
+    .main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+    .main-header { padding:12px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+    .main-header h2 { font-size:15px; font-weight:600; color:var(--text-0); }
+    .main-content { flex:1; padding:20px 24px; overflow-y:auto; }
 
-    /* ── Main ── */
-    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    .header {
-      padding: 12px 20px; border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .header h2 { font-size: 14px; font-weight: 600; }
-    .header-right { display: flex; align-items: center; gap: 10px; }
-    .status-badge {
-      padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 500;
-    }
-    .status-badge.healthy { background: var(--green-bg); color: var(--green); }
-    .status-badge.degraded { background: var(--yellow-bg); color: var(--yellow); }
-    .status-badge.unhealthy { background: var(--red-bg); color: var(--red); }
-    .ws-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--red); }
-    .ws-indicator.connected { background: var(--green); }
+    /* ═══ Sidebar ═══ */
+    .sidebar-brand { padding:16px 16px 4px; }
+    .sidebar-brand h1 { font-size:15px; font-weight:700; color:#fff; letter-spacing:-.5px; }
+    .sidebar-version { font-size:9px; color:var(--text-3); margin-top:2px; }
+    .role-switcher { display:flex; margin:12px 12px 8px; background:var(--bg-0); border-radius:var(--radius); padding:2px; }
+    .role-tab { flex:1; padding:5px 0; text-align:center; font-size:10px; font-weight:600; color:var(--text-3); cursor:pointer; border-radius:6px; transition:all .15s; text-transform:uppercase; letter-spacing:.5px; }
+    .role-tab:hover { color:var(--text-2); }
+    .role-tab.active { background:var(--accent); color:#fff; }
+    .nav-section { margin-bottom:4px; }
+    .nav-label { font-size:9px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-3); padding:12px 16px 4px; }
+    .nav-item { padding:6px 16px; cursor:pointer; font-size:12px; color:var(--text-2); display:flex; align-items:center; gap:8px; transition:all .1s; border-left:2px solid transparent; }
+    .nav-item:hover { background:rgba(255,255,255,.03); color:var(--text-0); }
+    .nav-item.active { color:var(--accent); border-left-color:var(--accent); background:var(--accent-dim); }
+    .nav-count { font-size:9px; background:var(--bg-3); padding:1px 6px; border-radius:8px; margin-left:auto; color:var(--text-3); }
+    .sidebar-footer { margin-top:auto; padding:12px 16px; font-size:10px; color:var(--text-3); border-top:1px solid var(--border); }
 
-    .content { flex: 1; padding: 16px 20px; overflow-y: auto; }
+    /* ═══ Cards ═══ */
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+    .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .card { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; transition:border-color .15s; }
+    .card:hover { border-color:var(--border-hover); }
+    .card.full { grid-column:1/-1; }
+    .card-title { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text-3); margin-bottom:10px; }
+    .card-value { font-size:24px; font-weight:700; color:var(--text-0); }
+    .card-sub { font-size:11px; color:var(--text-3); margin-top:2px; }
 
-    /* ── Cards ── */
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
-    .card {
-      background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 14px;
-    }
-    .card h4 { font-size: 11px; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
-    .card p { font-size: 11px; color: var(--dim); line-height: 1.5; }
-    .stat { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
-    .stat-label { color: var(--muted); }
-    .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
-    .stat-value.voice { color: var(--red); }
-    .stat-value.chat { color: var(--accent); }
+    /* ═══ Stat Cards ═══ */
+    .stat-card { text-align:center; padding:20px 16px; }
+    .stat-card .card-value { margin-bottom:4px; }
 
-    /* ── Agent/Adapter Pills ── */
-    .pill-list { display: flex; flex-wrap: wrap; gap: 4px; }
-    .pill {
-      font-size: 10px; padding: 2px 8px; border-radius: 10px;
-      background: var(--accent-bg); color: var(--accent); border: 1px solid #2a2a4e;
-    }
-    .pill.adapter { background: #1a2a1a; color: var(--green); border-color: #1a3a1a; }
+    /* ═══ Status Dots ═══ */
+    .dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+    .dot.green { background:var(--success); box-shadow:0 0 6px rgba(34,197,94,.4); }
+    .dot.red { background:var(--danger); box-shadow:0 0 6px rgba(239,68,68,.4); }
+    .dot.yellow { background:var(--warning); box-shadow:0 0 6px rgba(245,158,11,.4); }
+    .dot.gray { background:var(--text-3); }
 
-    /* ── Activity Feed ── */
-    .feed { max-height: 300px; overflow-y: auto; }
-    .feed-item {
-      padding: 6px 0; border-bottom: 1px solid #1a1a1a; font-size: 11px;
-      display: flex; gap: 8px; align-items: baseline;
-    }
-    .feed-time { color: var(--dim); font-variant-numeric: tabular-nums; flex-shrink: 0; width: 55px; }
-    .feed-event { color: var(--muted); }
-    .feed-event .agent { color: var(--accent); }
-    .feed-event .provider { color: var(--green); }
+    /* ═══ Pills & Badges ═══ */
+    .pill { font-size:10px; padding:2px 8px; border-radius:10px; display:inline-flex; align-items:center; gap:4px; }
+    .pill.accent { background:var(--accent-dim); color:var(--accent); }
+    .pill.success { background:var(--success-dim); color:var(--success); }
+    .pill.warning { background:var(--warning-dim); color:var(--warning); }
+    .pill.danger { background:var(--danger-dim); color:var(--danger); }
+    .pill-list { display:flex; flex-wrap:wrap; gap:4px; }
 
-    /* ── Full-width card ── */
-    .card.full { grid-column: 1 / -1; }
+    /* ═══ Buttons ═══ */
+    .btn { padding:6px 14px; border-radius:var(--radius-sm); font-size:12px; font-weight:500; cursor:pointer; border:1px solid transparent; transition:all .15s; display:inline-flex; align-items:center; gap:6px; font-family:var(--font); }
+    .btn-primary { background:var(--accent); color:#fff; } .btn-primary:hover { background:var(--accent-hover); }
+    .btn-secondary { background:var(--bg-3); color:var(--text-1); border-color:var(--border); } .btn-secondary:hover { background:var(--bg-4); }
+    .btn-danger { background:var(--danger-dim); color:var(--danger); } .btn-danger:hover { background:var(--danger); color:#fff; }
+    .btn-ghost { background:transparent; color:var(--text-2); } .btn-ghost:hover { background:var(--bg-3); color:var(--text-0); }
+    .btn-sm { padding:4px 10px; font-size:11px; }
+    .btn-block { width:100%; justify-content:center; }
+
+    /* ═══ Forms ═══ */
+    .input, .select, .textarea { background:var(--bg-0); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-1); padding:7px 10px; font-size:12px; font-family:var(--font); width:100%; transition:border-color .15s; }
+    .input:focus, .select:focus, .textarea:focus { outline:none; border-color:var(--accent); }
+    .textarea { resize:vertical; min-height:60px; }
+    .select { cursor:pointer; }
+    .form-group { margin-bottom:12px; }
+    .form-label { display:block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text-3); margin-bottom:4px; }
+    .search-box { position:relative; }
+    .search-box .input { padding-left:30px; }
+    .search-box::before { content:''; position:absolute; left:10px; top:50%; transform:translateY(-50%); width:12px; height:12px; border:1.5px solid var(--text-3); border-radius:50%; }
+
+    /* ═══ Tables ═══ */
+    .table { width:100%; border-collapse:collapse; font-size:12px; }
+    .table th { text-align:left; padding:8px 12px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text-3); border-bottom:1px solid var(--border); }
+    .table td { padding:10px 12px; border-bottom:1px solid var(--bg-3); color:var(--text-2); }
+    .table tr:hover td { background:rgba(255,255,255,.02); }
+    .table .mono { font-family:var(--font-mono); font-size:11px; }
+
+    /* ═══ Context Menu ═══ */
+    .ctx-menu { position:fixed; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); padding:4px; min-width:180px; box-shadow:0 8px 32px rgba(0,0,0,.5); z-index:1000; display:none; }
+    .ctx-menu.show { display:block; }
+    .ctx-item { padding:6px 12px; font-size:12px; color:var(--text-2); cursor:pointer; border-radius:var(--radius-sm); display:flex; justify-content:space-between; align-items:center; }
+    .ctx-item:hover { background:var(--accent-dim); color:var(--text-0); }
+    .ctx-item.danger { color:var(--danger); } .ctx-item.danger:hover { background:var(--danger-dim); }
+    .ctx-sep { height:1px; background:var(--border); margin:4px 0; }
+    .ctx-hint { font-size:10px; color:var(--text-3); }
+
+    /* ═══ Modals ═══ */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:900; display:none; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; min-width:400px; max-width:500px; }
+    .modal h3 { font-size:15px; font-weight:600; color:var(--text-0); margin-bottom:16px; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
+
+    /* ═══ Toasts ═══ */
+    .toast-wrap { position:fixed; bottom:20px; right:20px; z-index:1100; display:flex; flex-direction:column; gap:8px; }
+    .toast { padding:10px 16px; border-radius:var(--radius); font-size:12px; color:#fff; animation:slideIn .2s; }
+    .toast.success { background:#166534; } .toast.error { background:#991b1b; } .toast.info { background:#1e3a5f; }
+    @keyframes slideIn { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+
+    /* ═══ Drag & Drop ═══ */
+    .draggable { cursor:grab; } .draggable:active { cursor:grabbing; }
+    .dragging { opacity:.4; }
+    .drag-over { border-color:var(--accent) !important; background:var(--accent-dim) !important; }
+    .drop-zone { border:2px dashed var(--border); border-radius:var(--radius); padding:20px; text-align:center; color:var(--text-3); transition:all .15s; }
+    .drop-zone.active { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+
+    /* ═══ Provider Logos ═══ */
+    .provider-logo { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; font-weight:700; }
+    .provider-logo.sm { width:24px; height:24px; font-size:10px; }
+
+    /* ═══ Setup Wizard ═══ */
+    .wizard { max-width:700px; margin:0 auto; }
+    .step-indicator { display:flex; gap:8px; margin-bottom:32px; justify-content:center; }
+    .step-dot { width:32px; height:4px; border-radius:2px; background:var(--bg-4); transition:background .2s; }
+    .step-dot.done { background:var(--success); }
+    .step-dot.current { background:var(--accent); }
+    .wizard h2 { font-size:20px; font-weight:600; color:var(--text-0); text-align:center; margin-bottom:8px; }
+    .wizard .subtitle { text-align:center; color:var(--text-3); margin-bottom:24px; font-size:13px; }
+    .wizard-actions { display:flex; justify-content:space-between; margin-top:24px; }
+    .provider-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .provider-card { display:flex; flex-direction:column; align-items:center; gap:8px; padding:20px 12px; cursor:pointer; text-align:center; }
+    .provider-card .name { font-size:12px; font-weight:500; color:var(--text-1); }
+    .provider-card .sub { font-size:10px; color:var(--text-3); }
+    .provider-card.connected { border-color:var(--success); }
+    .provider-card.connected .name { color:var(--success); }
+
+    /* ═══ Recipe Editor ═══ */
+    .editor-layout { display:flex; height:calc(100vh - 110px); gap:0; margin:-20px -24px; }
+    .palette { width:200px; background:var(--bg-1); border-right:1px solid var(--border); padding:12px; overflow-y:auto; flex-shrink:0; }
+    .palette-title { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--text-3); margin-bottom:8px; padding:0 4px; }
+    .palette-item { padding:10px; margin-bottom:6px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-sm); cursor:grab; font-size:11px; color:var(--text-2); transition:all .15s; }
+    .palette-item:hover { border-color:var(--border-hover); color:var(--text-0); }
+    .palette-item .type-label { font-size:9px; color:var(--text-3); text-transform:uppercase; margin-top:2px; }
+    .canvas { flex:1; padding:24px; overflow-y:auto; display:flex; flex-direction:column; align-items:center; }
+    .canvas-step { width:320px; padding:14px 16px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:all .15s; position:relative; }
+    .canvas-step:hover { border-color:var(--border-hover); }
+    .canvas-step.selected { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+    .canvas-step .step-num { font-size:10px; color:var(--text-3); font-weight:600; }
+    .canvas-step .step-name { font-size:13px; color:var(--text-0); font-weight:500; margin-top:2px; }
+    .canvas-step .step-type { font-size:10px; color:var(--text-3); margin-top:4px; display:flex; align-items:center; gap:4px; }
+    .step-connector { width:2px; height:24px; background:var(--border); margin:0 auto; }
+    .canvas-add { width:320px; margin-top:4px; }
+    .config-panel { width:280px; background:var(--bg-1); border-left:1px solid var(--border); padding:16px; overflow-y:auto; flex-shrink:0; }
+    .config-panel h3 { font-size:12px; font-weight:600; color:var(--text-0); margin-bottom:16px; }
+
+    /* ═══ Bar Charts ═══ */
+    .bar-chart { display:flex; flex-direction:column; gap:6px; }
+    .bar-row { display:flex; align-items:center; gap:8px; font-size:11px; }
+    .bar-label { width:80px; color:var(--text-2); text-align:right; flex-shrink:0; }
+    .bar-track { flex:1; height:18px; background:var(--bg-0); border-radius:var(--radius-sm); overflow:hidden; }
+    .bar-fill { height:100%; border-radius:var(--radius-sm); transition:width .3s; display:flex; align-items:center; padding:0 6px; font-size:9px; color:#fff; font-weight:600; }
+    .bar-value { width:50px; text-align:right; color:var(--text-3); font-variant-numeric:tabular-nums; }
+
+    /* ═══ Activity Feed ═══ */
+    .feed { display:flex; flex-direction:column; }
+    .feed-item { padding:8px 0; border-bottom:1px solid var(--bg-3); font-size:12px; display:flex; gap:10px; align-items:baseline; }
+    .feed-time { color:var(--text-3); font-variant-numeric:tabular-nums; flex-shrink:0; font-size:11px; width:50px; font-family:var(--font-mono); }
+    .feed-text { color:var(--text-2); } .feed-text b { color:var(--text-0); font-weight:500; }
+
+    /* ═══ Tab Bar ═══ */
+    .tab-bar { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:16px; }
+    .tab { padding:8px 16px; font-size:12px; color:var(--text-3); cursor:pointer; border-bottom:2px solid transparent; transition:all .15s; }
+    .tab:hover { color:var(--text-1); }
+    .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+    /* ═══ Empty State ═══ */
+    .empty { text-align:center; padding:40px 20px; color:var(--text-3); }
+    .empty h3 { font-size:14px; color:var(--text-2); margin-bottom:8px; }
+    .empty p { font-size:12px; margin-bottom:16px; }
+
+    /* ═══ Utilities ═══ */
+    .flex { display:flex; } .flex-col { flex-direction:column; } .items-center { align-items:center; } .justify-between { justify-content:space-between; }
+    .gap-4 { gap:4px; } .gap-8 { gap:8px; } .gap-12 { gap:12px; } .gap-16 { gap:16px; }
+    .mb-8 { margin-bottom:8px; } .mb-12 { margin-bottom:12px; } .mb-16 { margin-bottom:16px; } .mb-24 { margin-bottom:24px; }
+    .mt-auto { margin-top:auto; } .ml-auto { margin-left:auto; }
+    .text-0 { color:var(--text-0); } .text-2 { color:var(--text-2); } .text-3 { color:var(--text-3); }
+    .text-success { color:var(--success); } .text-warning { color:var(--warning); } .text-danger { color:var(--danger); } .text-accent { color:var(--accent); }
+    .text-sm { font-size:11px; } .text-xs { font-size:10px; } .text-lg { font-size:15px; }
+    .font-mono { font-family:var(--font-mono); } .font-bold { font-weight:600; }
+    .truncate { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pointer { cursor:pointer; }
+    .hidden { display:none !important; }
+    .w-full { width:100%; }
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="sidebar">
-      <h1>AGENTVBX</h1>
-      <div class="version">v0.5.0 — Phase 5-7</div>
-
-      <div class="nav-section">
-        <h3>System</h3>
-        <div class="nav-item active">Overview</div>
-        <div class="nav-item">Queue <span class="nav-count" id="nav-queue">0</span></div>
-      </div>
-
-      <div class="nav-section">
-        <h3>Agents</h3>
-        <div class="nav-item">Blueprints <span class="nav-count" id="nav-agents">0</span></div>
-        <div class="nav-item">Recipes</div>
-        <div class="nav-item">Executions</div>
-      </div>
-
-      <div class="nav-section">
-        <h3>Providers</h3>
-        <div class="nav-item">Adapters <span class="nav-count" id="nav-adapters">0</span></div>
-        <div class="nav-item">Browser Sessions <span class="nav-count" id="nav-sessions">0</span></div>
-        <div class="nav-item">Registry</div>
-      </div>
-
-      <div class="nav-section">
-        <h3>Channels</h3>
-        <div class="nav-item">WhatsApp</div>
-        <div class="nav-item">Voice / Phone</div>
-        <div class="nav-item">SMS</div>
-      </div>
-
-      <div class="nav-section">
-        <h3>Integrations</h3>
-        <div class="nav-item">Google Drive</div>
-        <div class="nav-item">Monday.com</div>
-        <div class="nav-item">Notion</div>
-        <div class="nav-item">GitHub</div>
-        <div class="nav-item">Meta Ads</div>
-      </div>
-
-      <div class="nav-section">
-        <h3>Platform</h3>
-        <div class="nav-item">Marketplace</div>
-        <div class="nav-item">Analytics</div>
-        <div class="nav-item">White-label</div>
-      </div>
-
-      <div class="sidebar-footer">
-        <div id="ws-status">WebSocket: disconnected</div>
-      </div>
-    </div>
-
-    <div class="main">
-      <div class="header">
-        <h2>System Overview</h2>
-        <div class="header-right">
-          <div class="ws-indicator" id="ws-dot"></div>
-          <div class="status-badge degraded" id="status-badge">Starting</div>
-        </div>
-      </div>
-
-      <div class="content">
-        <div class="grid">
-          <div class="card">
-            <h4>Queue</h4>
-            <div class="stat">
-              <span class="stat-label">Voice (priority)</span>
-              <span class="stat-value voice" id="queue-voice">0</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">Chat</span>
-              <span class="stat-value chat" id="queue-chat">0</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">Background</span>
-              <span class="stat-value" id="queue-background">0</span>
-            </div>
-          </div>
-
-          <div class="card">
-            <h4>System</h4>
-            <div class="stat">
-              <span class="stat-label">Uptime</span>
-              <span class="stat-value" id="sys-uptime">-</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">Memory</span>
-              <span class="stat-value" id="sys-memory">-</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">WS Clients</span>
-              <span class="stat-value" id="sys-ws">0</span>
-            </div>
-          </div>
-
-          <div class="card">
-            <h4>Agents</h4>
-            <div class="pill-list" id="agents-list"></div>
-            <p id="agents-empty">No agents registered</p>
-          </div>
-
-          <div class="card">
-            <h4>Provider Adapters</h4>
-            <div class="pill-list" id="adapters-list"></div>
-            <p id="adapters-empty">No adapters connected</p>
-          </div>
-
-          <div class="card full">
-            <h4>Activity Feed</h4>
-            <div class="feed" id="feed">
-              <div class="feed-item">
-                <span class="feed-time">--:--</span>
-                <span class="feed-event">Waiting for events...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div id="app"></div>
+  <div id="ctx-menu" class="ctx-menu"></div>
+  <div id="modal" class="modal-overlay"></div>
+  <div id="toast-wrap" class="toast-wrap"></div>
 
   <script>
-    const API_BASE = window.location.origin;
-    const WS_URL = `ws://${window.location.host}/ws`;
-    let ws = null;
-    let feedItems = [];
-    const MAX_FEED = 100;
+  // ════════════════════════════════════════════════════════════════════════════
+  // AGENTVBX Desktop — Complete SPA (Phases 8A-8D)
+  // ════════════════════════════════════════════════════════════════════════════
 
-    function connectWS() {
+  // ─── Provider / Integration Icons ──────────────────────────────────────────
+  const P = {
+    chatgpt:    { name:'ChatGPT',     color:'#10a37f', letter:'G', model:'GPT-4o' },
+    claude:     { name:'Claude',      color:'#d97706', letter:'C', model:'Opus' },
+    gemini:     { name:'Gemini',      color:'#4285f4', letter:'G', model:'Pro 2.5' },
+    perplexity: { name:'Perplexity',  color:'#20b2aa', letter:'P', model:'Sonar' },
+    deepseek:   { name:'DeepSeek',    color:'#4f8df5', letter:'D', model:'V3' },
+    ollama:     { name:'Ollama',      color:'#888',    letter:'O', model:'llama3' },
+  };
+  const I = {
+    google_drive: { name:'Google Drive', color:'#4285f4', letter:'G' },
+    obsidian:     { name:'Obsidian',     color:'#7c3aed', letter:'O' },
+    monday:       { name:'Monday.com',   color:'#ff3d57', letter:'M' },
+    notion:       { name:'Notion',       color:'#999',    letter:'N' },
+    github:       { name:'GitHub',       color:'#c9d1d9', letter:'H' },
+    meta:         { name:'Meta Ads',     color:'#0668e1', letter:'M' },
+  };
+  const AGENTS = ['assistant','coder','creative-director','researcher','scheduler','strategist','writer'];
+  const STEP_TYPES = [
+    { type:'agent',              label:'Agent Step',        desc:'Send to an LLM via adapter', icon:'A' },
+    { type:'integration_read',   label:'Read Data',         desc:'Read from an integration',   icon:'R' },
+    { type:'integration_write',  label:'Write Data',        desc:'Write to an integration',    icon:'W' },
+    { type:'artifact_delivery',  label:'Deliver Artifact',  desc:'Save, upload, and notify',   icon:'D' },
+    { type:'notification',       label:'Notification',      desc:'Send via channel',           icon:'N' },
+  ];
+
+  function logo(id, info, sm) {
+    const s = sm ? 'sm' : '';
+    return `<div class="provider-logo ${s}" style="background:${info.color}20;color:${info.color}">${info.letter}</div>`;
+  }
+
+  // ─── Context Menu Definitions ──────────────────────────────────────────────
+  const CTX = {
+    provider: [
+      { label:'Test Connection',  action:'test' },
+      { label:'View Sessions',    action:'sessions' },
+      { label:'Set as Primary',   action:'primary' },
+      { sep:true },
+      { label:'Disconnect',       action:'disconnect', danger:true },
+    ],
+    recipe: [
+      { label:'Run Now',     action:'run' },
+      { label:'Edit',        action:'edit' },
+      { label:'Duplicate',   action:'dup' },
+      { sep:true },
+      { label:'Publish',     action:'publish' },
+      { label:'Delete',      action:'delete', danger:true },
+    ],
+    artifact: [
+      { label:'Preview',         action:'preview' },
+      { label:'Send for Review', action:'review' },
+      { label:'Download',        action:'download' },
+      { label:'Version History', action:'versions' },
+      { sep:true },
+      { label:'Archive',         action:'archive' },
+    ],
+    tenant: [
+      { label:'View Details',  action:'view' },
+      { label:'Usage Stats',   action:'usage' },
+      { label:'Change Tier',   action:'tier' },
+      { sep:true },
+      { label:'Suspend',       action:'suspend', danger:true },
+    ],
+  };
+
+  // ─── App State ─────────────────────────────────────────────────────────────
+  const S = {
+    role: 'user',
+    view: 'dashboard',
+    setupStep: 0,
+    tab: 0,
+    selectedStep: -1,
+
+    providers: [
+      { id:'chatgpt',    connected:true,  status:'active',  lastUsed:'2m ago' },
+      { id:'claude',     connected:true,  status:'active',  lastUsed:'5m ago' },
+      { id:'gemini',     connected:false, status:'offline',  lastUsed:null },
+      { id:'perplexity', connected:false, status:'offline',  lastUsed:null },
+      { id:'deepseek',   connected:true,  status:'active',  lastUsed:'1h ago' },
+      { id:'ollama',     connected:true,  status:'active',  lastUsed:'30m ago' },
+    ],
+
+    fileStores: [
+      { id:'local-docs', name:'Documents', type:'local',    path:'~/Documents', files:234 },
+      { id:'obsidian',   name:'Knowledge Base', type:'obsidian', path:'~/Vault', files:156 },
+      { id:'gdrive',     name:'Google Drive',   type:'cloud',    path:'My Drive', files:1203 },
+    ],
+
+    artifacts: [
+      { id:'a1', name:'Q1 Marketing Strategy.docx',   status:'approved',            version:3, provider:'claude',   updated:'1h ago',  feedback:0 },
+      { id:'a2', name:'Product Roadmap.md',            status:'collecting_feedback', version:2, provider:'chatgpt',  updated:'20m ago', feedback:3 },
+      { id:'a3', name:'Social Media Calendar.xlsx',    status:'draft',               version:1, provider:'chatgpt',  updated:'5m ago',  feedback:0 },
+      { id:'a4', name:'Brand Guidelines.pdf',          status:'pending_review',      version:1, provider:'claude',   updated:'2h ago',  feedback:0 },
+      { id:'a5', name:'API Documentation.md',          status:'approved',            version:5, provider:'deepseek', updated:'3h ago',  feedback:0 },
+    ],
+
+    recipes: [
+      { id:'r1', name:'Content Pipeline',      steps:4, lastRun:'1h ago',  runs:23, rating:4.5 },
+      { id:'r2', name:'Research & Summarize',   steps:3, lastRun:'3h ago',  runs:45, rating:4.8 },
+      { id:'r3', name:'Weekly Report',          steps:5, lastRun:'1d ago',  runs:12, rating:4.2 },
+      { id:'r4', name:'Voice Project Update',   steps:3, lastRun:'2d ago',  runs:8,  rating:4.0 },
+    ],
+
+    myRecipes: [
+      { id:'b1', name:'Content Pipeline',   published:true,  installs:23, revenue:45.50, version:'1.2.0' },
+      { id:'b2', name:'Research Assistant',  published:true,  installs:67, revenue:134,   version:'2.0.1' },
+      { id:'b3', name:'Data Analyzer',       published:false, installs:0,  revenue:0,     version:'0.1.0' },
+    ],
+
+    editingRecipe: { name:'', description:'', steps:[] },
+
+    tenants: [
+      { id:'t1', name:'Acme Corp',       tier:'pro',     users:12, msgs:3420, revenue:49.99, status:'active' },
+      { id:'t2', name:'StartupXYZ',      tier:'starter', users:3,  msgs:567,  revenue:19.99, status:'active' },
+      { id:'t3', name:'Freelancer Jane', tier:'free',    users:1,  msgs:89,   revenue:0,     status:'active' },
+      { id:'t4', name:'Agency Plus',     tier:'agency',  users:25, msgs:8901, revenue:99.99, status:'active' },
+      { id:'t5', name:'Beta Tester',     tier:'free',    users:1,  msgs:12,   revenue:0,     status:'suspended' },
+    ],
+
+    activity: [
+      { time:'14:32', text:'<b>writer</b> responded via <b>Claude</b> — Q1 Strategy draft' },
+      { time:'14:28', text:'Recipe <b>Content Pipeline</b> completed (4 steps, 12.3s)' },
+      { time:'14:15', text:'<b>researcher</b> responded via <b>ChatGPT</b> — market analysis' },
+      { time:'14:01', text:'Artifact <b>Product Roadmap.md</b> sent for review' },
+      { time:'13:45', text:'<b>coder</b> responded via <b>DeepSeek</b> — API refactor' },
+      { time:'13:30', text:'WhatsApp message routed to <b>assistant</b>' },
+      { time:'13:12', text:'New tenant <b>Agency Plus</b> created (agency tier)' },
+    ],
+  };
+
+  // ─── API Bridge ────────────────────────────────────────────────────────────
+  const API_BASE = 'http://localhost:3000';
+  const api = {
+    async call(cmd, args) {
+      if (window.__TAURI__) {
+        try { return await window.__TAURI__.core.invoke(cmd, args || {}); }
+        catch(e) { console.warn('Tauri IPC failed:', cmd, e); }
+      }
+      return null;
+    },
+    async rest(path, opts) {
       try {
-        ws = new WebSocket(WS_URL);
-        ws.onopen = () => {
-          document.getElementById('ws-dot').classList.add('connected');
-          document.getElementById('ws-status').textContent = 'WebSocket: connected';
-        };
-        ws.onclose = () => {
-          document.getElementById('ws-dot').classList.remove('connected');
-          document.getElementById('ws-status').textContent = 'WebSocket: disconnected';
-          setTimeout(connectWS, 3000);
-        };
-        ws.onmessage = (e) => {
-          try {
-            const event = JSON.parse(e.data);
-            handleWSEvent(event);
-          } catch {}
-        };
-      } catch { setTimeout(connectWS, 3000); }
+        const r = await fetch(`${API_BASE}/api${path}`, opts);
+        return r.ok ? await r.json() : null;
+      } catch { return null; }
+    }
+  };
+
+  // ─── Toast ─────────────────────────────────────────────────────────────────
+  function toast(msg, type='info') {
+    const el = document.getElementById('toast-wrap');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    el.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }
+
+  // ─── Modal ─────────────────────────────────────────────────────────────────
+  function showModal(title, body, actions) {
+    const el = document.getElementById('modal');
+    el.innerHTML = `<div class="modal"><h3>${title}</h3><div>${body}</div><div class="modal-actions">${actions}</div></div>`;
+    el.classList.add('show');
+  }
+  function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+  // ─── Context Menu ──────────────────────────────────────────────────────────
+  function showCtx(e, type, targetId) {
+    e.preventDefault();
+    const items = CTX[type];
+    if (!items) return;
+    const el = document.getElementById('ctx-menu');
+    el.innerHTML = items.map(i => i.sep
+      ? '<div class="ctx-sep"></div>'
+      : `<div class="ctx-item${i.danger ? ' danger' : ''}" data-ctx-action="${i.action}" data-ctx-type="${type}" data-ctx-target="${targetId}">${i.label}</div>`
+    ).join('');
+    el.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px';
+    el.style.top = Math.min(e.clientY, window.innerHeight - 250) + 'px';
+    el.classList.add('show');
+  }
+  document.addEventListener('click', () => document.getElementById('ctx-menu').classList.remove('show'));
+  document.getElementById('ctx-menu').addEventListener('click', e => {
+    const item = e.target.closest('.ctx-item');
+    if (!item) return;
+    const { ctxAction, ctxType, ctxTarget } = item.dataset;
+    toast(`${ctxAction || item.textContent} → ${ctxTarget || ctxType}`);
+  });
+  document.getElementById('modal').addEventListener('click', e => { if (e.target.classList.contains('modal-overlay')) closeModal(); });
+
+  // ─── Router ────────────────────────────────────────────────────────────────
+  function nav(view, role) {
+    if (role) S.role = role;
+    S.view = view;
+    S.tab = 0;
+    S.selectedStep = -1;
+    location.hash = `${S.role}/${view}`;
+    render();
+  }
+  window.addEventListener('hashchange', () => {
+    const [role, view] = location.hash.slice(1).split('/');
+    if (role && view) { S.role = role; S.view = view; render(); }
+  });
+
+  // ─── Render Engine ─────────────────────────────────────────────────────────
+  function render() {
+    const app = document.getElementById('app');
+    app.innerHTML = `<div class="app">${renderSidebar()}${renderMain()}</div>`;
+    bindEvents();
+  }
+
+  function renderSidebar() {
+    const navs = {
+      user: [
+        { section:'Getting Started', items:[{id:'setup', label:'Setup'}] },
+        { section:'My Workspace', items:[
+          {id:'dashboard', label:'Dashboard'},
+          {id:'providers', label:'Providers', count:S.providers.filter(p=>p.connected).length},
+          {id:'files', label:'Files', count:S.fileStores.length},
+          {id:'artifacts', label:'Artifacts', count:S.artifacts.length},
+        ]},
+        { section:'Recipes', items:[
+          {id:'recipes', label:'Installed', count:S.recipes.length},
+          {id:'marketplace', label:'Marketplace'},
+        ]},
+        { section:'Settings', items:[{id:'settings', label:'Preferences'}] },
+      ],
+      builder: [
+        { section:'Recipes', items:[
+          {id:'my-recipes', label:'My Recipes', count:S.myRecipes.length},
+          {id:'editor', label:'Recipe Editor'},
+        ]},
+        { section:'Marketplace', items:[
+          {id:'published', label:'Published', count:S.myRecipes.filter(r=>r.published).length},
+        ]},
+      ],
+      admin: [
+        { section:'Overview', items:[
+          {id:'admin-dash', label:'Dashboard'},
+          {id:'health', label:'System Health'},
+        ]},
+        { section:'Tenants', items:[
+          {id:'tenants', label:'All Tenants', count:S.tenants.length},
+        ]},
+        { section:'Analytics', items:[
+          {id:'analytics', label:'Usage'},
+          {id:'revenue', label:'Revenue'},
+        ]},
+        { section:'Marketplace', items:[
+          {id:'moderation', label:'Moderation', count:2},
+        ]},
+      ],
+    };
+
+    const sections = navs[S.role] || navs.user;
+    return `<div class="sidebar">
+      <div class="sidebar-brand"><h1>AGENTVBX</h1><div class="sidebar-version">v0.8.0 — Phase 8</div></div>
+      <div class="role-switcher">
+        <div class="role-tab${S.role==='user'?' active':''}" data-role="user">User</div>
+        <div class="role-tab${S.role==='builder'?' active':''}" data-role="builder">Builder</div>
+        <div class="role-tab${S.role==='admin'?' active':''}" data-role="admin">Admin</div>
+      </div>
+      ${sections.map(s => `
+        <div class="nav-section">
+          <div class="nav-label">${s.section}</div>
+          ${s.items.map(i => `<div class="nav-item${S.view===i.id?' active':''}" data-nav="${i.id}">${i.label}${i.count!=null?`<span class="nav-count">${i.count}</span>`:''}</div>`).join('')}
+        </div>
+      `).join('')}
+      <div class="sidebar-footer">Desktop v0.8.0<br>Node 20 + Tauri v2</div>
+    </div>`;
+  }
+
+  function renderMain() {
+    const views = {
+      setup: viewSetup, dashboard: viewDashboard, providers: viewProviders,
+      files: viewFiles, artifacts: viewArtifacts, recipes: viewRecipes,
+      marketplace: viewMarketplace, settings: viewSettings,
+      'my-recipes': viewMyRecipes, editor: viewEditor, published: viewPublished,
+      'admin-dash': viewAdminDash, health: viewHealth, tenants: viewTenants,
+      analytics: viewAnalytics, revenue: viewRevenue, moderation: viewModeration,
+    };
+    const fn = views[S.view] || views.dashboard;
+    return `<div class="main"><div class="main-content">${fn()}</div></div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  USER VIEWS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function viewSetup() {
+    const steps = ['Connect AI','Connect Files','Connect WhatsApp','Ready'];
+    const step = S.setupStep;
+    const dots = steps.map((_,i) => `<div class="step-dot ${i<step?'done':i===step?'current':''}"></div>`).join('');
+
+    let body = '';
+    if (step === 0) {
+      body = `<div class="provider-grid">${Object.entries(P).map(([id,p]) => {
+        const c = S.providers.find(x=>x.id===id);
+        const connected = c?.connected;
+        return `<div class="card provider-card${connected?' connected':''}" data-action="connect-provider" data-id="${id}">
+          ${logo(id,p)} <div class="name">${p.name}</div>
+          <div class="sub">${connected ? 'Connected' : p.model}</div>
+          ${connected ? '<span class="pill success">Connected</span>' : '<button class="btn btn-sm btn-secondary">Connect</button>'}
+        </div>`;
+      }).join('')}</div>`;
+    } else if (step === 1) {
+      const stores = [
+        { id:'local', name:'Local Folders', desc:'Browse your filesystem', icon:'F', color:'#888' },
+        { id:'obsidian', name:'Obsidian', desc:'Discover vaults automatically', icon:'O', color:'#7c3aed' },
+        { id:'gdrive', name:'Google Drive', desc:'Authorize cloud access', icon:'G', color:'#4285f4' },
+      ];
+      body = `<div class="provider-grid">${stores.map(s => {
+        const connected = S.fileStores.some(f => f.type === s.id || (s.id==='local' && f.type==='local'));
+        return `<div class="card provider-card${connected?' connected':''}" data-action="connect-store" data-id="${s.id}">
+          <div class="provider-logo" style="background:${s.color}20;color:${s.color}">${s.icon}</div>
+          <div class="name">${s.name}</div><div class="sub">${s.desc}</div>
+          ${connected ? '<span class="pill success">Connected</span>' : '<button class="btn btn-sm btn-secondary">Connect</button>'}
+        </div>`;
+      }).join('')}</div>`;
+    } else if (step === 2) {
+      body = `<div class="card" style="text-align:center;padding:40px">
+        <div style="width:160px;height:160px;background:var(--bg-4);border-radius:var(--radius);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px">QR Code Placeholder</div>
+        <p style="color:var(--text-2);font-size:12px">Scan with WhatsApp to link your account</p>
+        <p style="color:var(--text-3);font-size:11px;margin-top:8px">This connects your WhatsApp for the House Channel</p>
+      </div>`;
+    } else {
+      const connProv = S.providers.filter(p=>p.connected).length;
+      body = `<div style="text-align:center">
+        <div style="font-size:48px;margin-bottom:16px">&#10003;</div>
+        <h3 class="text-0" style="font-size:18px;margin-bottom:8px">You're all set!</h3>
+        <p class="text-2 mb-24">${connProv} providers, ${S.fileStores.length} file stores connected</p>
+        <button class="btn btn-primary" data-action="finish-setup">Start Using AGENTVBX</button>
+      </div>`;
     }
 
-    function handleWSEvent(event) {
-      if (event.type === 'health') updateHealth(event.data);
-      addFeedItem(event.type, event.data);
-    }
+    return `<div class="wizard">
+      <div class="step-indicator">${dots}</div>
+      <h2>${steps[step]}</h2>
+      <div class="subtitle">Step ${step+1} of ${steps.length}</div>
+      ${body}
+      <div class="wizard-actions">
+        ${step > 0 ? `<button class="btn btn-ghost" data-action="setup-back">Back</button>` : '<div></div>'}
+        ${step < 3 ? `<button class="btn btn-primary" data-action="setup-next">Continue</button>` : ''}
+      </div>
+    </div>`;
+  }
 
-    async function fetchHealth() {
-      try {
-        const res = await fetch(`${API_BASE}/api/health`);
-        if (res.ok) updateHealth(await res.json());
-      } catch {}
-    }
+  function viewDashboard() {
+    const connected = S.providers.filter(p=>p.connected);
+    return `
+      <div class="flex justify-between items-center mb-16">
+        <div><h2 class="text-0 text-lg font-bold">Dashboard</h2><p class="text-3 text-sm">Welcome back</p></div>
+        <button class="btn btn-primary" data-action="send-message">Send Message</button>
+      </div>
 
-    async function fetchSystem() {
-      try {
-        const res = await fetch(`${API_BASE}/api/system`);
-        if (res.ok) {
-          const sys = await res.json();
-          document.getElementById('sys-uptime').textContent = formatUptime(sys.uptime);
-          document.getElementById('sys-memory').textContent = formatBytes(sys.memory?.rss ?? 0);
-          document.getElementById('sys-ws').textContent = sys.ws_clients ?? 0;
+      <div class="flex gap-8 mb-16" style="overflow-x:auto">
+        ${connected.map(c => {
+          const p = P[c.id];
+          return `<div class="card flex items-center gap-8" style="min-width:160px;padding:10px 14px" data-ctx="provider" data-ctx-id="${c.id}" oncontextmenu="showCtx(event,'provider','${c.id}')">
+            ${logo(c.id, p, true)} <div><div class="text-sm text-0">${p.name}</div><div class="text-xs text-3">${c.lastUsed}</div></div>
+            <div class="dot green ml-auto"></div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="grid-4 mb-16">
+        <div class="card stat-card"><div class="card-value text-accent">247</div><div class="card-sub">Messages Today</div></div>
+        <div class="card stat-card"><div class="card-value text-success">${S.recipes.length}</div><div class="card-sub">Active Recipes</div></div>
+        <div class="card stat-card"><div class="card-value text-warning">${S.artifacts.length}</div><div class="card-sub">Artifacts</div></div>
+        <div class="card stat-card"><div class="card-value text-0">${connected.length}</div><div class="card-sub">Providers</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Recent Activity</div>
+          <div class="feed">${S.activity.map(a => `<div class="feed-item"><span class="feed-time">${a.time}</span><span class="feed-text">${a.text}</span></div>`).join('')}</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Artifacts Needing Attention</div>
+          ${S.artifacts.filter(a=>a.status!=='approved'&&a.status!=='draft').map(a => `
+            <div class="flex items-center justify-between" style="padding:8px 0;border-bottom:1px solid var(--bg-3)">
+              <div><div class="text-sm text-0">${a.name}</div><div class="text-xs text-3">${a.updated}</div></div>
+              <span class="pill ${a.status==='pending_review'?'warning':'accent'}">${a.status.replace(/_/g,' ')}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }
+
+  function viewProviders() {
+    return `
+      <div class="flex justify-between items-center mb-8">
+        <div><h2 class="text-0 text-lg font-bold">Provider Priority Chain</h2>
+        <p class="text-3 text-sm">Drag to reorder. AGENTVBX tries providers top to bottom.</p></div>
+      </div>
+      <div class="flex flex-col gap-8" id="provider-list">
+        ${S.providers.map((c,i) => { const p = P[c.id]; return `
+          <div class="card flex items-center gap-12 draggable" draggable="true" data-idx="${i}" data-ctx="provider" data-ctx-id="${c.id}"
+               oncontextmenu="showCtx(event,'provider','${c.id}')" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+            <span class="text-3 text-sm font-mono" style="width:20px">#${i+1}</span>
+            ${logo(c.id, p)}
+            <div style="flex:1">
+              <div class="text-0 font-bold">${p.name}</div>
+              <div class="text-xs text-3">${p.model} · ${c.connected ? c.lastUsed : 'Not connected'}</div>
+            </div>
+            <span class="pill ${c.connected?'success':'danger'}">${c.connected?'Active':'Offline'}</span>
+            <div class="dot ${c.connected?'green':'red'}"></div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  function viewFiles() {
+    return `
+      <h2 class="text-0 text-lg font-bold mb-16">File Stores</h2>
+      <div class="grid">${S.fileStores.map(f => {
+        const colors = { local:'#888', obsidian:'#7c3aed', cloud:'#4285f4' };
+        return `<div class="card pointer" data-action="browse-files" data-id="${f.id}" oncontextmenu="showCtx(event,'artifact','${f.id}')">
+          <div class="flex items-center gap-8 mb-8">
+            <div class="provider-logo sm" style="background:${colors[f.type]}20;color:${colors[f.type]}">${f.name[0]}</div>
+            <div class="text-0 font-bold">${f.name}</div>
+            <div class="dot green ml-auto"></div>
+          </div>
+          <div class="text-xs text-3">${f.path}</div>
+          <div class="text-xs text-2 mt-auto" style="margin-top:8px">${f.files.toLocaleString()} files</div>
+        </div>`;
+      }).join('')}
+        <div class="card drop-zone pointer" data-action="add-store">
+          <div class="text-2 mb-8">+ Add File Store</div>
+          <div class="text-xs text-3">Connect local folder, Obsidian vault, or cloud storage</div>
+        </div>
+      </div>`;
+  }
+
+  function viewArtifacts() {
+    const statuses = { draft:'accent', pending_review:'warning', collecting_feedback:'accent', approved:'success', archived:'danger' };
+    return `
+      <div class="flex justify-between items-center mb-16">
+        <h2 class="text-0 text-lg font-bold">Artifacts</h2>
+      </div>
+      <table class="table">
+        <thead><tr><th>Name</th><th>Provider</th><th>Status</th><th>Version</th><th>Updated</th></tr></thead>
+        <tbody>${S.artifacts.map(a => {
+          const p = P[a.provider];
+          return `<tr class="pointer" oncontextmenu="showCtx(event,'artifact','${a.id}')">
+            <td class="text-0">${a.name}</td>
+            <td><div class="flex items-center gap-4">${logo(a.provider, p, true)}<span class="text-sm">${p.name}</span></div></td>
+            <td><span class="pill ${statuses[a.status]||'accent'}">${a.status.replace(/_/g,' ')}</span></td>
+            <td class="mono">v${a.version}${a.feedback ? ` · ${a.feedback} feedback` : ''}</td>
+            <td class="text-3">${a.updated}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  }
+
+  function viewRecipes() {
+    return `
+      <div class="flex justify-between items-center mb-16">
+        <h2 class="text-0 text-lg font-bold">Installed Recipes</h2>
+        <button class="btn btn-secondary" data-action="go" data-dest="marketplace">Browse Marketplace</button>
+      </div>
+      <div class="grid">${S.recipes.map(r => `
+        <div class="card" oncontextmenu="showCtx(event,'recipe','${r.id}')">
+          <div class="flex justify-between items-center mb-8">
+            <div class="text-0 font-bold">${r.name}</div>
+            <span class="pill accent">${r.steps} steps</span>
+          </div>
+          <div class="flex justify-between text-xs text-3 mb-12">
+            <span>Last: ${r.lastRun}</span><span>${r.runs} runs</span><span>${'★'.repeat(Math.floor(r.rating))} ${r.rating}</span>
+          </div>
+          <button class="btn btn-primary btn-sm btn-block" data-action="run-recipe" data-id="${r.id}">Run</button>
+        </div>
+      `).join('')}</div>`;
+  }
+
+  function viewMarketplace() {
+    const featured = [
+      { name:'Social Video Pipeline', author:'AGENTVBX', installs:342, rating:4.7, steps:6, cat:'Content' },
+      { name:'Meta Lead Nurture',     author:'AGENTVBX', installs:189, rating:4.5, steps:5, cat:'Marketing' },
+      { name:'Monday Morning Briefing', author:'Community', installs:256, rating:4.6, steps:4, cat:'Productivity' },
+      { name:'Research Report',        author:'AGENTVBX', installs:412, rating:4.9, steps:3, cat:'Research' },
+    ];
+    return `
+      <h2 class="text-0 text-lg font-bold mb-16">Recipe Marketplace</h2>
+      <div class="search-box mb-16"><input class="input" placeholder="Search recipes..." /></div>
+      <div class="grid">${featured.map(r => `
+        <div class="card">
+          <div class="flex justify-between items-center mb-8">
+            <div class="text-0 font-bold">${r.name}</div>
+            <span class="pill accent">${r.cat}</span>
+          </div>
+          <div class="text-xs text-3 mb-8">by ${r.author} · ${r.steps} steps</div>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-2">${r.installs} installs · ${'★'.repeat(Math.floor(r.rating))} ${r.rating}</span>
+            <button class="btn btn-sm btn-primary">Install</button>
+          </div>
+        </div>
+      `).join('')}</div>`;
+  }
+
+  function viewSettings() {
+    return `
+      <h2 class="text-0 text-lg font-bold mb-16">Settings</h2>
+      <div class="card mb-12">
+        <div class="card-title">API Connection</div>
+        <div class="form-group"><label class="form-label">Server URL</label><input class="input" value="http://localhost:3000" /></div>
+        <div class="form-group"><label class="form-label">API Key (optional)</label><input class="input" type="password" placeholder="Enter API key" /></div>
+        <button class="btn btn-primary btn-sm">Save & Test</button>
+      </div>
+      <div class="card mb-12">
+        <div class="card-title">Notifications</div>
+        <div class="flex justify-between items-center mb-8"><span class="text-sm">Recipe completions</span><input type="checkbox" checked /></div>
+        <div class="flex justify-between items-center mb-8"><span class="text-sm">Artifact updates</span><input type="checkbox" checked /></div>
+        <div class="flex justify-between items-center"><span class="text-sm">Provider disconnections</span><input type="checkbox" checked /></div>
+      </div>
+      <div class="card">
+        <div class="card-title">About</div>
+        <div class="text-sm text-2">AGENTVBX Desktop v0.8.0<br>Tauri v2 + Node 20<br>7 agents · 8 recipes · 21+ providers</div>
+      </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  BUILDER VIEWS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function viewMyRecipes() {
+    return `
+      <div class="flex justify-between items-center mb-16">
+        <h2 class="text-0 text-lg font-bold">My Recipes</h2>
+        <button class="btn btn-primary" data-action="new-recipe">+ Create New</button>
+      </div>
+      <table class="table">
+        <thead><tr><th>Name</th><th>Version</th><th>Installs</th><th>Revenue</th><th>Status</th><th></th></tr></thead>
+        <tbody>${S.myRecipes.map(r => `
+          <tr>
+            <td class="text-0 font-bold">${r.name}</td>
+            <td class="mono">${r.version}</td>
+            <td>${r.installs}</td>
+            <td class="text-success">$${r.revenue.toFixed(2)}</td>
+            <td><span class="pill ${r.published?'success':'accent'}">${r.published?'Published':'Draft'}</span></td>
+            <td><button class="btn btn-ghost btn-sm" data-action="edit-recipe" data-id="${r.id}">Edit</button></td>
+          </tr>
+        `).join('')}</tbody>
+      </table>`;
+  }
+
+  function viewEditor() {
+    const recipe = S.editingRecipe;
+    const sel = S.selectedStep >= 0 && recipe.steps[S.selectedStep] ? recipe.steps[S.selectedStep] : null;
+
+    return `
+      <div class="flex justify-between items-center" style="padding:8px 16px;border-bottom:1px solid var(--border);margin:-20px -24px 0">
+        <div class="flex items-center gap-12">
+          <input class="input" style="width:200px;background:transparent;border:none;font-size:14px;font-weight:600;color:var(--text-0)" value="${recipe.name||'Untitled Recipe'}" data-action="recipe-name" />
+        </div>
+        <div class="flex gap-8">
+          <button class="btn btn-ghost btn-sm" data-action="test-recipe">Test</button>
+          <button class="btn btn-secondary btn-sm" data-action="save-recipe">Save</button>
+          <button class="btn btn-primary btn-sm" data-action="publish-recipe">Publish</button>
+        </div>
+      </div>
+
+      <div class="editor-layout">
+        <div class="palette">
+          <div class="palette-title">Step Types</div>
+          ${STEP_TYPES.map(st => `
+            <div class="palette-item draggable" draggable="true" data-step-type="${st.type}"
+                 ondragstart="event.dataTransfer.setData('step-type','${st.type}')">
+              <div class="flex items-center gap-4"><span class="text-accent font-bold">${st.icon}</span> ${st.label}</div>
+              <div class="type-label">${st.desc}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="canvas" id="recipe-canvas"
+             ondragover="event.preventDefault();event.currentTarget.classList.add('drag-over')"
+             ondragleave="event.currentTarget.classList.remove('drag-over')"
+             ondrop="onCanvasDrop(event)">
+          ${recipe.steps.length === 0 ? `
+            <div class="empty">
+              <h3>Empty Recipe</h3>
+              <p>Drag step types from the left panel or click below</p>
+              <button class="btn btn-secondary" data-action="add-step" data-type="agent">+ Add First Step</button>
+            </div>
+          ` : recipe.steps.map((step, i) => `
+            ${i > 0 ? '<div class="step-connector"></div>' : ''}
+            <div class="canvas-step${S.selectedStep===i?' selected':''}" data-action="select-step" data-idx="${i}"
+                 draggable="true" data-step-idx="${i}"
+                 ondragstart="event.dataTransfer.setData('step-idx','${i}')"
+                 ondragover="event.preventDefault()"
+                 ondrop="onStepReorder(event, ${i})">
+              <div class="step-num">Step ${i+1}</div>
+              <div class="step-name">${step.name || 'Unnamed Step'}</div>
+              <div class="step-type">
+                <span class="pill accent">${step.type}</span>
+                ${step.provider ? `<span class="text-xs text-3">via ${P[step.provider]?.name || step.provider}</span>` : ''}
+              </div>
+            </div>
+          `).join('') + `
+            <div class="step-connector"></div>
+            <div class="canvas-add">
+              <button class="btn btn-ghost btn-sm btn-block" data-action="add-step" data-type="agent">+ Add Step</button>
+            </div>
+          `}
+        </div>
+
+        <div class="config-panel">
+          ${sel ? `
+            <h3>Configure Step</h3>
+            <div class="form-group"><label class="form-label">Name</label><input class="input" value="${sel.name}" data-field="name" data-step-cfg /></div>
+            <div class="form-group"><label class="form-label">Type</label>
+              <select class="select" data-field="type" data-step-cfg>${STEP_TYPES.map(t=>`<option value="${t.type}"${t.type===sel.type?' selected':''}>${t.label}</option>`).join('')}</select>
+            </div>
+            ${sel.type === 'agent' ? `
+              <div class="form-group"><label class="form-label">Agent</label>
+                <select class="select" data-field="agent" data-step-cfg>${AGENTS.map(a=>`<option${a===sel.agent?' selected':''}>${a}</option>`).join('')}</select>
+              </div>
+              <div class="form-group"><label class="form-label">Provider</label>
+                <select class="select" data-field="provider" data-step-cfg>${Object.entries(P).map(([id,p])=>`<option value="${id}"${id===sel.provider?' selected':''}>${p.name}</option>`).join('')}</select>
+              </div>
+            ` : ''}
+            ${sel.type?.startsWith('integration') ? `
+              <div class="form-group"><label class="form-label">Integration</label>
+                <select class="select" data-field="integration" data-step-cfg>${Object.entries(I).map(([id,i])=>`<option value="${id}"${id===sel.integration?' selected':''}>${i.name}</option>`).join('')}</select>
+              </div>
+            ` : ''}
+            <div class="form-group"><label class="form-label">Input</label><input class="input" value="${sel.input||''}" data-field="input" data-step-cfg /></div>
+            <div class="form-group"><label class="form-label">Output Variable</label><input class="input" value="${sel.output||''}" data-field="output" data-step-cfg /></div>
+            <div class="form-group"><label class="form-label">Gate</label>
+              <select class="select" data-field="gate" data-step-cfg><option${sel.gate==='auto'?' selected':''}>auto</option><option${sel.gate==='human_approval'?' selected':''}>human_approval</option></select>
+            </div>
+            <button class="btn btn-danger btn-sm btn-block" style="margin-top:16px" data-action="delete-step" data-idx="${S.selectedStep}">Delete Step</button>
+          ` : `
+            <div class="empty"><h3>No Step Selected</h3><p>Click a step on the canvas to configure it</p></div>
+          `}
+        </div>
+      </div>`;
+  }
+
+  function viewPublished() {
+    return `
+      <h2 class="text-0 text-lg font-bold mb-16">Published Recipes</h2>
+      <div class="grid">${S.myRecipes.filter(r=>r.published).map(r => `
+        <div class="card">
+          <div class="text-0 font-bold mb-8">${r.name}</div>
+          <div class="flex justify-between text-xs text-3 mb-8"><span>v${r.version}</span><span>${r.installs} installs</span></div>
+          <div class="text-success font-bold">$${r.revenue.toFixed(2)} earned</div>
+        </div>
+      `).join('')}</div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  ADMIN VIEWS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function viewAdminDash() {
+    const totalRevenue = S.tenants.reduce((s,t) => s + t.revenue, 0);
+    const totalMsgs = S.tenants.reduce((s,t) => s + t.msgs, 0);
+    return `
+      <h2 class="text-0 text-lg font-bold mb-16">Admin Dashboard</h2>
+      <div class="grid-4 mb-16">
+        <div class="card stat-card"><div class="card-value text-0">${S.tenants.length}</div><div class="card-sub">Total Tenants</div></div>
+        <div class="card stat-card"><div class="card-value text-success">${S.tenants.filter(t=>t.status==='active').length}</div><div class="card-sub">Active</div></div>
+        <div class="card stat-card"><div class="card-value text-accent">${totalMsgs.toLocaleString()}</div><div class="card-sub">Total Messages</div></div>
+        <div class="card stat-card"><div class="card-value text-warning">$${totalRevenue.toFixed(2)}</div><div class="card-sub">Monthly Revenue</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Revenue by Tier</div>
+          <div class="bar-chart">
+            ${['agency','pro','starter','free'].map(tier => {
+              const rev = S.tenants.filter(t=>t.tier===tier).reduce((s,t)=>s+t.revenue,0);
+              const max = 100;
+              const colors = { agency:'#6366f1', pro:'#22c55e', starter:'#f59e0b', free:'#71717a' };
+              return `<div class="bar-row"><div class="bar-label">${tier}</div><div class="bar-track"><div class="bar-fill" style="width:${rev/max*100}%;background:${colors[tier]}">$${rev.toFixed(0)}</div></div></div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Recent Activity</div>
+          <div class="feed">${S.activity.slice(0,5).map(a => `<div class="feed-item"><span class="feed-time">${a.time}</span><span class="feed-text">${a.text}</span></div>`).join('')}</div>
+        </div>
+      </div>`;
+  }
+
+  function viewHealth() {
+    const services = [
+      { name:'API Server',       status:'healthy',  detail:'Port 3000, 0 errors' },
+      { name:'Redis',            status:'healthy',  detail:'localhost:6379, 3 queues' },
+      { name:'Ollama',           status:'healthy',  detail:'llama3 loaded, GPU' },
+      { name:'WhatsApp Bridge',  status:'degraded', detail:'Connected, 2 retries' },
+      { name:'Voice (Telnyx)',   status:'healthy',  detail:'3 active numbers' },
+      { name:'Browser Sessions', status:'healthy',  detail:'4 active, 0 expired' },
+    ];
+    return `
+      <h2 class="text-0 text-lg font-bold mb-16">System Health</h2>
+      <div class="grid">${services.map(s => {
+        const colors = { healthy:'green', degraded:'yellow', unhealthy:'red' };
+        return `<div class="card">
+          <div class="flex items-center gap-8 mb-8"><div class="dot ${colors[s.status]}"></div><div class="text-0 font-bold">${s.name}</div></div>
+          <div class="text-xs text-3">${s.detail}</div>
+          <span class="pill ${s.status==='healthy'?'success':s.status==='degraded'?'warning':'danger'}" style="margin-top:8px">${s.status}</span>
+        </div>`;
+      }).join('')}</div>
+      <div class="card full mt-16" style="margin-top:16px">
+        <div class="card-title">Queue Status</div>
+        <div class="grid-3">
+          <div class="text-center"><div class="text-lg text-danger font-bold">0</div><div class="text-xs text-3">Voice (high)</div></div>
+          <div class="text-center"><div class="text-lg text-accent font-bold">3</div><div class="text-xs text-3">Chat (normal)</div></div>
+          <div class="text-center"><div class="text-lg text-2 font-bold">1</div><div class="text-xs text-3">Background (low)</div></div>
+        </div>
+      </div>`;
+  }
+
+  function viewTenants() {
+    const tierColors = { free:'text-3', starter:'warning', pro:'success', agency:'accent' };
+    return `
+      <div class="flex justify-between items-center mb-16">
+        <h2 class="text-0 text-lg font-bold">Tenants</h2>
+        <button class="btn btn-primary" data-action="create-tenant">+ Create Tenant</button>
+      </div>
+      <div class="search-box mb-12"><input class="input" placeholder="Search tenants..." /></div>
+      <table class="table">
+        <thead><tr><th>Name</th><th>Tier</th><th>Users</th><th>Messages</th><th>Revenue</th><th>Status</th></tr></thead>
+        <tbody>${S.tenants.map(t => `
+          <tr class="pointer" oncontextmenu="showCtx(event,'tenant','${t.id}')">
+            <td class="text-0 font-bold">${t.name}</td>
+            <td><span class="pill ${tierColors[t.tier]}">${t.tier}</span></td>
+            <td>${t.users}</td>
+            <td class="mono">${t.msgs.toLocaleString()}</td>
+            <td class="text-success">$${t.revenue.toFixed(2)}</td>
+            <td><span class="pill ${t.status==='active'?'success':'danger'}">${t.status}</span></td>
+          </tr>
+        `).join('')}</tbody>
+      </table>`;
+  }
+
+  function viewAnalytics() {
+    return `
+      <h2 class="text-0 text-lg font-bold mb-16">Usage Analytics</h2>
+      <div class="tab-bar mb-16">
+        <div class="tab active">Today</div><div class="tab">This Week</div><div class="tab">This Month</div>
+      </div>
+      <div class="grid-4 mb-16">
+        <div class="card stat-card"><div class="card-value text-accent">247</div><div class="card-sub">Messages</div></div>
+        <div class="card stat-card"><div class="card-value text-success">18</div><div class="card-sub">Active Users</div></div>
+        <div class="card stat-card"><div class="card-value text-warning">12</div><div class="card-sub">Recipe Runs</div></div>
+        <div class="card stat-card"><div class="card-value text-0">340ms</div><div class="card-sub">Avg Response</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Provider Usage</div>
+          <div class="bar-chart">
+            ${[['ChatGPT',78,'#10a37f'],['Claude',65,'#d97706'],['DeepSeek',42,'#4f8df5'],['Ollama',35,'#888'],['Gemini',12,'#4285f4']].map(([n,v,c]) =>
+              `<div class="bar-row"><div class="bar-label">${n}</div><div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${c}">${v}</div></div></div>`
+            ).join('')}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cost Breakdown</div>
+          <div class="bar-chart">
+            ${[['OpenAI','$12.40','#10a37f',62],['Anthropic','$8.20','#d97706',41],['DeepSeek','$2.10','#4f8df5',10],['Telnyx','$1.50','#00b2a9',8]].map(([n,cost,c,w]) =>
+              `<div class="bar-row"><div class="bar-label">${n}</div><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${c}">${cost}</div></div></div>`
+            ).join('')}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function viewRevenue() {
+    const totalRevenue = S.tenants.reduce((s,t) => s + t.revenue, 0);
+    return `
+      <h2 class="text-0 text-lg font-bold mb-16">Revenue</h2>
+      <div class="grid-4 mb-16">
+        <div class="card stat-card"><div class="card-value text-success">$${totalRevenue.toFixed(2)}</div><div class="card-sub">MRR</div></div>
+        <div class="card stat-card"><div class="card-value text-accent">$179.50</div><div class="card-sub">Marketplace</div></div>
+        <div class="card stat-card"><div class="card-value text-warning">+12%</div><div class="card-sub">Growth</div></div>
+        <div class="card stat-card"><div class="card-value text-0">$${(totalRevenue/S.tenants.filter(t=>t.revenue>0).length).toFixed(2)}</div><div class="card-sub">ARPU</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Revenue Streams</div>
+          <div class="bar-chart">
+            <div class="bar-row"><div class="bar-label">Subs</div><div class="bar-track"><div class="bar-fill" style="width:70%;background:var(--success)">$${totalRevenue.toFixed(0)}</div></div></div>
+            <div class="bar-row"><div class="bar-label">Marketplace</div><div class="bar-track"><div class="bar-fill" style="width:35%;background:var(--accent)">$179</div></div></div>
+            <div class="bar-row"><div class="bar-label">Affiliate</div><div class="bar-track"><div class="bar-fill" style="width:12%;background:var(--warning)">$48</div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top Tenants by Revenue</div>
+          <table class="table">
+            <tbody>${S.tenants.sort((a,b)=>b.revenue-a.revenue).slice(0,4).map(t => `
+              <tr><td class="text-0">${t.name}</td><td><span class="pill ${t.tier==='agency'?'accent':'success'}">${t.tier}</span></td><td class="text-success">$${t.revenue.toFixed(2)}</td></tr>
+            `).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  function viewModeration() {
+    const pending = [
+      { id:'m1', name:'Email Drip Automator', author:'user_42', submitted:'2h ago', flags:0, desc:'Automates email sequences using AI-generated content' },
+      { id:'m2', name:'Invoice Generator',    author:'agency_x', submitted:'5h ago', flags:1, desc:'Creates and sends invoices via Monday.com integration' },
+    ];
+    return `
+      <div class="flex justify-between items-center mb-16">
+        <h2 class="text-0 text-lg font-bold">Marketplace Moderation</h2>
+        <span class="pill warning">${pending.length} pending review</span>
+      </div>
+      ${pending.map(r => `
+        <div class="card mb-12">
+          <div class="flex justify-between items-center mb-8">
+            <div>
+              <div class="text-0 font-bold">${r.name}</div>
+              <div class="text-xs text-3">by ${r.author} · submitted ${r.submitted}${r.flags ? ` · <span class="text-danger">${r.flags} flag(s)</span>` : ''}</div>
+            </div>
+            <div class="flex gap-8">
+              <button class="btn btn-sm btn-primary" data-action="approve-recipe" data-id="${r.id}">Approve</button>
+              <button class="btn btn-sm btn-danger" data-action="reject-recipe" data-id="${r.id}">Reject</button>
+            </div>
+          </div>
+          <div class="text-sm text-2">${r.desc}</div>
+        </div>
+      `).join('')}`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  DRAG & DROP
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  let dragIdx = null;
+  function onDragStart(e) {
+    dragIdx = parseInt(e.currentTarget.dataset.idx);
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function onDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+  }
+  function onDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const targetIdx = parseInt(e.currentTarget.dataset.idx);
+    if (dragIdx !== null && dragIdx !== targetIdx) {
+      const [item] = S.providers.splice(dragIdx, 1);
+      S.providers.splice(targetIdx, 0, item);
+      toast(`${P[item.id].name} moved to #${targetIdx + 1}`);
+      render();
+    }
+  }
+  function onDragEnd(e) { e.currentTarget.classList.remove('dragging'); dragIdx = null; }
+
+  function onCanvasDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const type = e.dataTransfer.getData('step-type');
+    if (type) {
+      const step = { name:`Step ${S.editingRecipe.steps.length+1}`, type, agent:type==='agent'?'writer':undefined, provider:type==='agent'?'claude':undefined, integration:type.startsWith('integration')?'google_drive':undefined, input:'', output:`step_${S.editingRecipe.steps.length+1}`, gate:'auto' };
+      S.editingRecipe.steps.push(step);
+      S.selectedStep = S.editingRecipe.steps.length - 1;
+      render();
+    }
+  }
+  function onStepReorder(e, targetIdx) {
+    e.preventDefault(); e.stopPropagation();
+    const srcIdx = parseInt(e.dataTransfer.getData('step-idx'));
+    if (!isNaN(srcIdx) && srcIdx !== targetIdx) {
+      const [step] = S.editingRecipe.steps.splice(srcIdx, 1);
+      S.editingRecipe.steps.splice(targetIdx, 0, step);
+      S.selectedStep = targetIdx;
+      render();
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  EVENT BINDING
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function bindEvents() {
+    const app = document.getElementById('app');
+
+    // Role switcher
+    app.querySelectorAll('.role-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const role = tab.dataset.role;
+        const defaults = { user:'dashboard', builder:'my-recipes', admin:'admin-dash' };
+        nav(defaults[role], role);
+      });
+    });
+
+    // Nav items
+    app.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (item.dataset.nav) nav(item.dataset.nav);
+      });
+    });
+
+    // Actions
+    app.addEventListener('click', e => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+
+      switch (action) {
+        case 'setup-next': S.setupStep = Math.min(S.setupStep + 1, 3); render(); break;
+        case 'setup-back': S.setupStep = Math.max(S.setupStep - 1, 0); render(); break;
+        case 'finish-setup': nav('dashboard'); break;
+        case 'connect-provider': {
+          const id = btn.dataset.id;
+          const prov = S.providers.find(p => p.id === id);
+          if (prov && !prov.connected) {
+            api.call('get_provider_login_config', { providerId: id }).then(config => {
+              if (config) toast(`Opening ${P[id].name} login...`);
+              else { prov.connected = true; prov.status = 'active'; prov.lastUsed = 'just now'; toast(`${P[id].name} connected!`, 'success'); render(); }
+            });
+          }
+          break;
         }
-      } catch {}
-    }
-
-    function updateHealth(h) {
-      const badge = document.getElementById('status-badge');
-      const s = h.status || 'unknown';
-      badge.textContent = s.charAt(0).toUpperCase() + s.slice(1);
-      badge.className = 'status-badge ' + (s === 'healthy' ? 'healthy' : s === 'degraded' ? 'degraded' : 'unhealthy');
-
-      if (h.queue) {
-        document.getElementById('queue-voice').textContent = h.queue.voice ?? 0;
-        document.getElementById('queue-chat').textContent = h.queue.chat ?? 0;
-        document.getElementById('queue-background').textContent = h.queue.background ?? 0;
-        document.getElementById('nav-queue').textContent = (h.queue.voice??0)+(h.queue.chat??0)+(h.queue.background??0);
+        case 'connect-store':
+          api.call('discover_obsidian_vaults').then(vaults => {
+            toast(`Scanning for ${btn.dataset.id} stores...`);
+          });
+          break;
+        case 'send-message':
+          showModal('Send Message', `<div class="form-group"><label class="form-label">Message</label><textarea class="textarea" placeholder="Type your message..."></textarea></div><div class="form-group"><label class="form-label">Channel</label><select class="select"><option>App</option><option>WhatsApp</option></select></div>`, `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="toast('Message sent!','success');closeModal()">Send</button>`);
+          break;
+        case 'run-recipe': toast(`Running ${btn.dataset.id}...`); break;
+        case 'go': nav(btn.dataset.dest); break;
+        case 'new-recipe': S.editingRecipe = { name:'New Recipe', description:'', steps:[] }; S.selectedStep = -1; nav('editor'); break;
+        case 'edit-recipe': S.editingRecipe = { name:'Content Pipeline', description:'', steps:[
+          { name:'Research Topic', type:'agent', agent:'researcher', provider:'claude', input:'{user_input}', output:'research', gate:'auto' },
+          { name:'Write Draft', type:'agent', agent:'writer', provider:'chatgpt', input:'{research}', output:'draft', gate:'auto' },
+          { name:'Save to Drive', type:'integration_write', integration:'google_drive', input:'{draft}', output:'file_url', gate:'auto' },
+          { name:'Notify User', type:'notification', input:'Draft ready: {file_url}', output:'sent', gate:'auto' },
+        ]}; S.selectedStep = -1; nav('editor'); break;
+        case 'select-step': S.selectedStep = parseInt(btn.dataset.idx); render(); break;
+        case 'add-step': {
+          const step = { name:`Step ${S.editingRecipe.steps.length+1}`, type:btn.dataset.type||'agent', agent:'writer', provider:'claude', input:'', output:`step_${S.editingRecipe.steps.length+1}`, gate:'auto' };
+          S.editingRecipe.steps.push(step);
+          S.selectedStep = S.editingRecipe.steps.length - 1;
+          render(); break;
+        }
+        case 'delete-step': S.editingRecipe.steps.splice(parseInt(btn.dataset.idx), 1); S.selectedStep = -1; render(); break;
+        case 'save-recipe': toast('Recipe saved!', 'success'); break;
+        case 'test-recipe': toast('Running test execution...'); break;
+        case 'publish-recipe': toast('Recipe published to marketplace!', 'success'); break;
+        case 'create-tenant':
+          showModal('Create Tenant', `<div class="form-group"><label class="form-label">Name</label><input class="input" placeholder="Tenant name" /></div><div class="form-group"><label class="form-label">Tier</label><select class="select"><option>free</option><option>starter</option><option>pro</option><option>agency</option></select></div>`, `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="toast('Tenant created!','success');closeModal()">Create</button>`);
+          break;
+        case 'approve-recipe': toast('Recipe approved and published!', 'success'); break;
+        case 'reject-recipe': toast('Recipe rejected', 'error'); break;
       }
-      if (h.agents) {
-        const el = document.getElementById('agents-list');
-        const em = document.getElementById('agents-empty');
-        if (h.agents.length) { em.style.display='none'; el.innerHTML=h.agents.map(a=>`<span class="pill">${a}</span>`).join(''); document.getElementById('nav-agents').textContent=h.agents.length; }
-        else { em.style.display='block'; el.innerHTML=''; }
-      }
-      if (h.adapters) {
-        const el = document.getElementById('adapters-list');
-        const em = document.getElementById('adapters-empty');
-        if (h.adapters.length) { em.style.display='none'; el.innerHTML=h.adapters.map(a=>`<span class="pill adapter">${a}</span>`).join(''); document.getElementById('nav-adapters').textContent=h.adapters.length; }
-        else { em.style.display='block'; el.innerHTML=''; }
-      }
+    });
+
+    // Step config changes
+    app.querySelectorAll('[data-step-cfg]').forEach(input => {
+      input.addEventListener('change', e => {
+        if (S.selectedStep >= 0 && S.editingRecipe.steps[S.selectedStep]) {
+          S.editingRecipe.steps[S.selectedStep][e.target.dataset.field] = e.target.value;
+          render();
+        }
+      });
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  INIT
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  (function init() {
+    const hash = location.hash.slice(1);
+    if (hash) {
+      const [role, view] = hash.split('/');
+      if (role && view) { S.role = role; S.view = view; }
     }
+    render();
 
-    function addFeedItem(type, data) {
-      const time = new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit'});
-      let text = type;
-      if (type==='message:routed' && data?.decision) text=`Routed to <span class="agent">${data.decision.agent}</span> via <span class="provider">${data.decision.provider}</span>`;
-      else if (type==='message:completed' && data) text=`<span class="agent">${data.agent}</span> responded via <span class="provider">${data.provider}</span> (${data.latency_ms}ms)`;
-      else if (type==='message:failed' && data) text=`<span class="agent">${data.agent}</span> failed: ${data.error||'unknown'}`;
-      else if (type==='tenant:created' && data) text=`Tenant created: ${data.name||data.id}`;
-      else if (type==='recipe:started' && data) text=`Recipe started: ${data.recipe}`;
-      else if (type==='message:queued' && data) text=`Message queued: ${data.queueId}`;
-      feedItems.unshift({time,text});
-      if (feedItems.length>MAX_FEED) feedItems=feedItems.slice(0,MAX_FEED);
-      document.getElementById('feed').innerHTML=feedItems.map(i=>`<div class="feed-item"><span class="feed-time">${i.time}</span><span class="feed-event">${i.text}</span></div>`).join('');
-    }
-
-    function formatUptime(s) { if(!s) return '-'; return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${Math.floor(s%60)}s`; }
-    function formatBytes(b) { if(!b) return '-'; return `${(b/1024/1024).toFixed(1)} MB`; }
-
-    connectWS(); fetchHealth(); fetchSystem();
-    setInterval(fetchHealth, 5000);
-    setInterval(fetchSystem, 10000);
+    // Try connecting to API
+    api.rest('/health').then(h => { if (h) toast('API connected', 'success'); });
+    api.call('get_health').then(h => { if (h) toast(`Desktop: ${h.platform}`, 'info'); });
+  })();
   </script>
 </body>
 </html>
