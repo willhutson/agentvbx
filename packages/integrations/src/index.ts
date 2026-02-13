@@ -25,3 +25,25 @@ export { NotionAdapter } from './notion.js';
 
 // GitHub
 export { GitHubAdapter } from './github.js';
+
+// Meta Ads
+export { MetaAdsClient } from './meta-ads.js';
+export type {
+  MetaAdsConfig,
+  CampaignConfig,
+  CampaignObjective,
+  AudienceTargeting,
+  AdCreative,
+  LeadFormConfig,
+  AdPlacement,
+  CampaignMetrics,
+  Campaign,
+} from './meta-ads.js';
+
+// Meta Webhooks
+export { MetaWebhookProcessor } from './meta-webhooks.js';
+export type {
+  MetaWebhookConfig,
+  LeadgenEntry,
+  ProcessedLead,
+} from './meta-webhooks.js';

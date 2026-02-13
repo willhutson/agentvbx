@@ -14,6 +14,7 @@ export interface Orchestrator {
     queue: Record<string, number>;
     processes: Record<string, unknown>;
     agents: string[];
+    adapters?: string[];
   }>;
   getRouter(): {
     getRegisteredAgents(): string[];
@@ -38,4 +39,33 @@ export interface Orchestrator {
   getSupervisor(): {
     getStatus(): Record<string, unknown>;
   };
+
+  // Phase 5: Browser BYOA
+  getBrowserSessions(): unknown[];
+  getBrowserSessionsByTenant(tenantId: string): unknown[];
+  createBrowserSession(config: {
+    tenant_id: string;
+    provider_id: string;
+    provider_url?: string;
+    headless?: boolean;
+  }): Promise<unknown>;
+  closeBrowserSession(tenantId: string, providerId: string): Promise<void>;
+  getBrowserHealth(): Promise<Record<string, unknown>>;
+  requestBrowserReauth(tenantId: string, providerId: string, method?: string): Promise<unknown>;
+  getAvailableBrowserScripts(): unknown[];
+
+  // Phase 6: Marketplace
+  getMarketplaceRecipes(category?: string, sort?: string, search?: string): unknown[];
+  getMarketplaceRecipe(id: string): unknown;
+  publishRecipe(recipe: unknown): unknown;
+  installRecipe(recipeId: string, tenantId: string): boolean;
+
+  // Phase 7: Analytics
+  getAnalyticsOverview(): unknown;
+  getTenantUsage(tenantId: string, from?: string, to?: string): unknown;
+  getCostBreakdown(): unknown;
+
+  // Phase 7: White-label
+  getWhitelabelConfig(tenantId: string): unknown;
+  setWhitelabelConfig(tenantId: string, config: unknown): unknown;
 }
