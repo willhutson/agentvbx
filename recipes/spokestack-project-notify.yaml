@@ -1,0 +1,43 @@
+name: "SpokeStack Project Notifications"
+description: "Receive project updates from SpokeStack ERP via WhatsApp"
+trigger:
+  type: platform_event
+  platform: spokestack
+  event: canvas_node_completed
+
+steps:
+  - name: "Format update"
+    type: agent
+    agent: assistant
+    input: event_data
+    output: formatted_message
+    params:
+      prompt: >
+        Format this project update as a brief WhatsApp message.
+        Include: what was completed, what's next, and if any action is needed.
+        Keep it under 200 words. Use emojis sparingly.
+
+  - name: "Send update"
+    type: notification
+    channel: whatsapp
+    input: formatted_message
+    output: notification_result
+    params:
+      template: "{input}"
+
+marketplace:
+  id: recipe-spokestack-project-notify-v1
+  creator: agentvbx
+  title: "SpokeStack Project Notifications"
+  description: "Automatically receive formatted project updates from SpokeStack ERP via WhatsApp when canvas nodes complete."
+  category: productivity
+  tags:
+    - spokestack
+    - notifications
+    - whatsapp
+    - project_management
+  version: "1.0"
+  required_tools:
+    - spokestack
+  pricing:
+    type: free

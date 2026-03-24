@@ -26,6 +26,10 @@ export { NotionAdapter } from './notion.js';
 // GitHub
 export { GitHubAdapter } from './github.js';
 
+// SpokeStack ERP
+export { SpokeStackAdapter } from './spokestack.js';
+export type { SpokeStackConfig } from './spokestack.js';
+
 // Meta Ads
 export { MetaAdsClient } from './meta-ads.js';
 export type {

@@ -68,4 +68,12 @@ export interface Orchestrator {
   // Phase 7: White-label
   getWhitelabelConfig(tenantId: string): unknown;
   setWhitelabelConfig(tenantId: string, config: unknown): unknown;
+
+  // SpokeStack integration
+  exportRecipe(name: string): unknown;
+  importRecipe(data: unknown): unknown;
+  getMessageStore(): {
+    store(msg: unknown): Promise<void>;
+    get(id: string): Promise<unknown>;
+  };
 }

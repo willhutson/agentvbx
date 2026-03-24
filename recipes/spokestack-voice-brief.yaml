@@ -1,0 +1,70 @@
+name: "Voice Note to Brief"
+description: "Send a voice note, get a draft brief created in SpokeStack"
+trigger:
+  type: voice_note
+  channel: whatsapp
+
+steps:
+  - name: "Transcribe"
+    type: agent
+    agent: researcher
+    provider: ollama
+    input: voice_audio
+    output: transcript
+    params:
+      instruction: "Transcribe and clean up this voice note. Preserve all project details, client names, dates, and deliverables."
+
+  - name: "Structure as brief"
+    type: agent
+    agent: strategist
+    input: transcript
+    output: brief_data
+    params:
+      instruction: >
+        Convert this transcript into a structured brief with:
+        - title, client, briefType, objectives, deliverables, timeline, requirements
+        Return as JSON matching the SpokeStack brief schema.
+
+  - name: "Confirm with user"
+    type: agent
+    agent: assistant
+    input: brief_data
+    gate: human_approval
+    output: confirmed_brief
+    params:
+      instruction: "Present this brief summary to the user for approval before creating it in SpokeStack."
+
+  - name: "Create in SpokeStack"
+    type: integration_write
+    integration: spokestack
+    action: create
+    input: confirmed_brief
+    output: created_brief
+    params:
+      resource: briefs
+
+  - name: "Notify"
+    type: notification
+    channel: whatsapp
+    input: created_brief
+    output: notification_result
+    params:
+      message: "Brief created in SpokeStack: {title}. View it here: {review_url}"
+
+marketplace:
+  id: recipe-spokestack-voice-brief-v1
+  creator: agentvbx
+  title: "Voice Note to Brief"
+  description: "Send a voice note describing a project brief, and it gets transcribed, structured, and created in SpokeStack ERP after your approval."
+  category: productivity
+  tags:
+    - spokestack
+    - voice
+    - briefs
+    - automation
+  version: "1.0"
+  required_tools:
+    - spokestack
+    - ollama
+  pricing:
+    type: free

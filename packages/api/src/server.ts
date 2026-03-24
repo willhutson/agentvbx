@@ -405,6 +405,72 @@ export class ApiServer {
       res.json(config);
     });
 
+    // ── SpokeStack Webhook ──
+    this.app.post('/api/webhooks/spokestack', async (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+
+      // Verify webhook signature if secret is configured
+      const webhookSecret = process.env.SPOKESTACK_WEBHOOK_SECRET;
+      if (webhookSecret) {
+        const signature = req.headers['x-spokestack-signature'] as string;
+        if (!signature) { res.status(401).json({ error: 'Missing webhook signature' }); return; }
+        const { createHmac } = await import('node:crypto');
+        const expected = createHmac('sha256', webhookSecret)
+          .update(JSON.stringify(req.body))
+          .digest('hex');
+        if (signature !== expected) { res.status(401).json({ error: 'Invalid webhook signature' }); return; }
+      }
+
+      const { v4: uuidv4 } = await import('uuid');
+      const message = {
+        id: uuidv4(),
+        timestamp: new Date().toISOString(),
+        direction: 'inbound' as const,
+        channel: 'app' as const,
+        from: 'spokestack',
+        to: 'orchestrator',
+        tenant_id: req.body.tenant_id ?? 'default',
+        number_id: req.body.number_id ?? 'default',
+        text: req.body.text ?? JSON.stringify(req.body),
+        metadata: {
+          type: req.body.type,
+          canvas_run_id: req.body.canvas_run_id,
+          canvas_node_id: req.body.canvas_node_id,
+          source: 'spokestack_webhook',
+          ...req.body.metadata,
+        },
+      };
+
+      // Store the message for reply matching
+      await this.orchestrator.getMessageStore().store(message);
+
+      const queueId = await this.orchestrator.handleMessage(message);
+      this.broadcast({
+        type: 'spokestack:webhook_received',
+        data: { queue_id: queueId, type: req.body.type },
+        timestamp: new Date().toISOString(),
+      });
+      res.status(202).json({ queue_id: queueId, message_id: message.id });
+    });
+
+    // ── Recipe Export/Import ──
+    this.app.get('/api/recipes/:name/export-canvas', auth, (_req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      const canvas = this.orchestrator.exportRecipe(String(_req.params.name));
+      if (!canvas) { res.status(404).json({ error: 'Recipe not found' }); return; }
+      res.json(canvas);
+    });
+
+    this.app.post('/api/recipes/import-canvas', auth, (req, res) => {
+      if (!this.orchestrator) { res.status(503).json({ error: 'Orchestrator not ready' }); return; }
+      try {
+        const recipe = this.orchestrator.importRecipe(req.body);
+        res.status(201).json(recipe);
+      } catch (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : 'Invalid canvas format' });
+      }
+    });
+
     // ── System info ──
     this.app.get('/api/system', auth, async (_req, res) => {
       const health = this.orchestrator ? await this.orchestrator.getHealth() : null;
