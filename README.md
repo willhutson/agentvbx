@@ -66,13 +66,13 @@ agentvbx/
 │   ├── whatsapp/          # WhatsApp channel (WWeb.js + House Channel)
 │   ├── voice/             # Telnyx Voice AI, SMS, transcription
 │   ├── agent-browser/     # Playwright BYOA — task runner, health monitor, re-auth
-│   ├── integrations/      # Google Drive, Monday.com, Notion, GitHub, Meta Ads
+│   ├── integrations/      # Google Drive, Monday.com, Notion, GitHub, Meta Ads, SpokeStack ERP
 │   ├── mobile/            # Progressive Web App (PWA)
 │   └── desktop/           # Tauri v2 desktop app (17-view SPA)
 ├── config/
 │   ├── agents/            # 7 agent blueprints (YAML)
 │   └── recipes/           # Workflow templates (YAML)
-├── recipes/               # 6 community/example recipes
+├── recipes/               # 11 community/example recipes
 ├── .github/workflows/     # CI/CD pipeline
 ├── Dockerfile             # Multi-stage production build
 ├── docker-compose.yml     # API + Redis + Ollama
@@ -85,11 +85,11 @@ agentvbx/
 |---------|-------------|
 | **orchestrator** | Redis Streams message queue with 3 priority lanes (voice > chat > background). Keyword/channel/tool routing engine. Sequential recipe execution with human approval gates. Multi-tenant isolation. Artifact capture/upload/notify pipeline. Recipe marketplace. Analytics engine. Tier-based rate limiter. White-label config. |
 | **providers** | 21+ provider registry with YAML catalog. Model Genie recommends tools based on user intent. Adapters: Ollama (local), Anthropic Claude, OpenAI ChatGPT, DeepSeek. `AdapterManager` handles fallback chains. |
-| **api** | Express REST API with 30+ endpoints. WebSocket for real-time events. Browser session management. Marketplace CRUD. Analytics queries. White-label config. |
+| **api** | Express REST API with 33+ endpoints. WebSocket for real-time events. Browser session management. Marketplace CRUD. Analytics queries. White-label config. SpokeStack webhook (HMAC-verified). Recipe export/import (Canvas ↔ VBX YAML). |
 | **whatsapp** | WWeb.js client with QR auth. `WhatsAppBridge` normalizes messages → queue → route → respond. House Channel for broadcasts with relevance scoring. |
 | **voice** | Telnyx client for number provisioning, Voice AI, call control, SMS. `VoiceBridge` handles inbound calls → answer → Voice AI → transcribe → queue. Transcription routing: Whisper (free) → Deepgram Nova-3 (pro). |
 | **agent-browser** | Playwright persistent contexts for BYOA (Bring Your Own Account). Task runner with provider-specific UI scripts. Health monitoring with re-auth flows. Supports ChatGPT, Claude, Gemini, Perplexity, Midjourney, Lovable. |
-| **integrations** | Unified `IntegrationAdapter` interface. Google Drive (OAuth2, file ops, sharing). Monday.com (GraphQL, board/item CRUD). Notion (pages, databases). GitHub (repos, files, issues, commits). Meta Ads (campaigns, audiences, lead forms, webhooks). |
+| **integrations** | Unified `IntegrationAdapter` interface. Google Drive (OAuth2, file ops, sharing). Monday.com (GraphQL, board/item CRUD). Notion (pages, databases). GitHub (repos, files, issues, commits). Meta Ads (campaigns, audiences, lead forms, webhooks). SpokeStack ERP (review callbacks, recipe sync, webhook routing, Redis-backed reply tracking). |
 | **mobile** | Progressive Web App with service worker, offline support, push notifications. 4-tab layout: Dashboard, Chat, Recipes, Settings. |
 | **desktop** | Tauri v2 native desktop app with 17-view SPA. Role-based UI (User/Builder/Admin). Setup wizard, provider priority drag-and-drop, visual recipe editor, artifact management, admin analytics, marketplace moderation. Rust backend for filesystem, Obsidian vault discovery, session storage, content hashing. |
 
@@ -105,7 +105,7 @@ Agents are YAML blueprints that define behavior, provider preferences, and routi
 | **Coder** | Code generation, debugging, architecture | Anthropic → DeepSeek → OpenAI → Ollama | App, WhatsApp |
 | **Assistant** | General Q&A, everyday tasks | Ollama → DeepSeek → OpenAI → Anthropic | All channels |
 | **Scheduler** | Calendar, meetings, reminders | Ollama → ChatGPT → Claude | WhatsApp, Voice, SMS |
-| **Creative Director** | Images, video, design, branding | ChatGPT → Claude → DeepSeek | WhatsApp, App |
+| **Creative Director** | Images, video, design, branding, SpokeStack review flows | ChatGPT → Claude → DeepSeek | WhatsApp, App |
 
 ### Creating an Agent
 
@@ -146,6 +146,11 @@ Recipes are multi-step workflows. Each step can use a different agent, integrati
 | **Social Video Pipeline** | Manual | Script → Storyboard → Generate video → Upload → Notify |
 | **Meta Lead Nurture** | Meta Ads webhook | Capture lead → Research company → Craft personalized WhatsApp → Log to CRM |
 | **Content Calendar** | Schedule (Mon 9am) | Research trends → Generate calendar → Write posts → Review gate → Drive + Notion |
+| **Voice to Video** *(SpokeStack)* | Voice note | Transcribe idea → Trigger SpokeStack Canvas pipeline → Creative review → Deliver video |
+| **Quick Social Image** *(SpokeStack)* | Message keyword | Parse request → Generate 3 variants → WhatsApp review (approve/revise/skip) → Deliver |
+| **Weekly Content Batch** *(SpokeStack)* | Schedule (Mon 9am) | Fetch draft posts → Batch generate images → Review gate → Notify team |
+| **Project Notifications** *(SpokeStack)* | Platform event | Receive `canvas_node_completed` → Format update → WhatsApp notification |
+| **Voice to Brief** *(SpokeStack)* | Voice note | Transcribe → Structure as brief JSON → Confirm → Create in SpokeStack ERP |
 
 ### Recipe Step Types
 
@@ -156,6 +161,8 @@ Recipes are multi-step workflows. Each step can use a different agent, integrati
 | `integration_write` | Write to a platform |
 | `artifact_delivery` | Save file → upload to cloud → send notification |
 | `notification` | Send message via WhatsApp, SMS, or app |
+| `review_callback` | Route creative review decisions (APPROVE/REVISE/SKIP/REJECT) to an ERP webhook |
+| `question_response` | Route execution question responses back to a running pipeline |
 
 ## Recipe Marketplace
 
@@ -199,6 +206,7 @@ The agent-browser package automates these provider web UIs directly:
 | **Notion** | Page/database CRUD, knowledge base, meeting notes |
 | **GitHub** | File commits, issue creation, code artifact storage |
 | **Meta Ads** | Campaign creation, audience targeting, lead forms, ROAS tracking, webhook processing |
+| **SpokeStack ERP** | Review callbacks (APPROVE/REVISE/SKIP/REJECT), recipe sync (export VBX YAML → Canvas, import Canvas → VBX YAML), webhook routing, Redis-backed reply tracking (7-day TTL) |
 
 ## Multi-Tenant Scaling
 
@@ -234,7 +242,7 @@ Business and Agency tier tenants can fully customize:
 
 Full interactive documentation: **[docs/api-manual.html](docs/api-manual.html)**
 
-30+ endpoints across 9 categories:
+33+ endpoints across 10 categories:
 
 ```
 GET  /api/health                              System health + queue stats
@@ -248,6 +256,9 @@ GET  /api/marketplace/recipes                 Browse recipe marketplace
 GET  /api/analytics/overview                  System-wide analytics
 GET  /api/analytics/costs                     Cost breakdown
 PUT  /api/whitelabel/:tenantId                Set white-label config
+POST /api/webhooks/spokestack                   SpokeStack ERP webhook (HMAC-SHA256 verified)
+GET  /api/recipes/:name/export-canvas            Export recipe as Canvas format
+POST /api/recipes/import-canvas                  Import Canvas format as VBX recipe
 WS   /ws                                      Real-time event stream
 ```
 
@@ -293,6 +304,16 @@ The Tauri v2 desktop app (`packages/desktop/`) is the zero-infrastructure hub fo
 | Business/Agency | Deepgram Nova-3 Premium | Diarization, language detection |
 | Live Calls | Telnyx Native | Always-on, sub-200ms latency |
 
+## Environment Variables
+
+### SpokeStack ERP
+
+| Variable | Description |
+|----------|-------------|
+| `SPOKESTACK_ERP_URL` | Base URL of the SpokeStack ERP instance |
+| `SPOKESTACK_SERVICE_KEY` | API key for SpokeStack service authentication |
+| `SPOKESTACK_WEBHOOK_SECRET` | HMAC-SHA256 secret for verifying inbound webhooks |
+
 ## Development
 
 ```bash
@@ -323,6 +344,7 @@ npm run clean            # Remove all dist/ directories
 - [x] Phase 6: Recipe marketplace, multi-tenant at scale, CI/CD, Docker
 - [x] Phase 7: Mobile PWA, Meta Ads funnel, analytics, white-label
 - [x] Phase 8: Desktop app — Tauri v2 with session adapters, file stores, visual recipe builder, admin panel
+- [x] Phase 9: SpokeStack ERP integration, creative production pipeline, review callback routing, recipe sync
 
 ## License
 
