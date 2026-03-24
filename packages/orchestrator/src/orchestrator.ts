@@ -11,8 +11,11 @@
  */
 
 import { RedisStreams, type RedisStreamsConfig } from './queue/index.js';
+import { MessageStore } from './queue/index.js';
 import { MessageRouter } from './routing/index.js';
 import { RecipeEngine } from './recipe/index.js';
+import { exportRecipeAsCanvas } from './recipe/index.js';
+import { importCanvasAsRecipe } from './recipe/index.js';
 import { TenantManager } from './tenant/index.js';
 import { ConfigLoader } from './config/index.js';
 import { ProcessSupervisor } from './process/index.js';
@@ -20,9 +23,12 @@ import { ArtifactManager } from './artifacts/index.js';
 import { AgentStepHandler } from './handlers/agent-step-handler.js';
 import { IntegrationReadHandler, IntegrationWriteHandler } from './handlers/integration-step-handler.js';
 import { NotificationStepHandler } from './handlers/notification-step-handler.js';
+import { SpokeStackResponseHandler } from './handlers/spokestack-response-handler.js';
 import { ArtifactDeliveryHandler } from './artifacts/delivery.js';
 import { createLogger } from './logger.js';
-import type { Message, QueueMessage, Channel } from './types.js';
+import type { Message, QueueMessage, Channel, Recipe } from './types.js';
+import type { CanvasExport } from './recipe/index.js';
+import type { SpokeStackAdapterLike } from './handlers/spokestack-response-handler.js';
 
 const logger = createLogger('orchestrator');
 
@@ -70,6 +76,7 @@ export interface MessageResult {
 
 export class Orchestrator {
   private queue: RedisStreams;
+  private messageStore: MessageStore;
   private router: MessageRouter;
   private recipeEngine: RecipeEngine;
   private tenantManager: TenantManager;
@@ -84,9 +91,11 @@ export class Orchestrator {
   private integrationManager?: IntegrationManagerLike;
   private channelSender?: ChannelSender;
   private eventHandler?: MessageEventHandler;
+  private spokestackHandler?: SpokeStackResponseHandler;
 
   constructor(private config: OrchestratorConfig) {
     this.queue = new RedisStreams(config.redis);
+    this.messageStore = new MessageStore(config.redis);
     this.router = new MessageRouter();
     this.recipeEngine = new RecipeEngine();
     this.tenantManager = new TenantManager(config.basePath);
@@ -128,6 +137,14 @@ export class Orchestrator {
   }
 
   /**
+   * Wire the SpokeStack response handler for review/question callback routing.
+   */
+  setSpokeStackHandler(adapter: SpokeStackAdapterLike): void {
+    this.spokestackHandler = new SpokeStackResponseHandler(adapter);
+    logger.info('SpokeStack response handler registered');
+  }
+
+  /**
    * Start the orchestrator — connect to Redis, load configs, begin consuming.
    */
   async start(): Promise<void> {
@@ -135,6 +152,7 @@ export class Orchestrator {
 
     // Connect to Redis
     await this.queue.connect();
+    await this.messageStore.connect();
 
     // Load agent blueprints and register them with the router
     const agents = this.configLoader.loadAgents();
@@ -161,6 +179,7 @@ export class Orchestrator {
     logger.info('Stopping AGENTVBX orchestrator...');
     this.running = false;
     await this.supervisor.stopAll();
+    await this.messageStore.disconnect();
     await this.queue.disconnect();
     logger.info('AGENTVBX orchestrator stopped');
   }
@@ -245,6 +264,24 @@ export class Orchestrator {
   getConfigLoader(): ConfigLoader { return this.configLoader; }
   getSupervisor(): ProcessSupervisor { return this.supervisor; }
   getArtifactManager(): ArtifactManager { return this.artifactManager; }
+  getMessageStore(): MessageStore { return this.messageStore; }
+
+  /**
+   * Export a recipe as Canvas format for ERP import.
+   */
+  exportRecipe(name: string): CanvasExport | null {
+    const recipes = this.configLoader.loadRecipes();
+    const recipe = recipes.find((r: Recipe) => r.name === name);
+    if (!recipe) return null;
+    return exportRecipeAsCanvas(recipe);
+  }
+
+  /**
+   * Import a Canvas template as a VBX recipe.
+   */
+  importRecipe(canvas: CanvasExport): Recipe {
+    return importCanvasAsRecipe(canvas);
+  }
 
   // ─── Private: Step Handler Registration ─────────────────────────────
 
@@ -329,6 +366,20 @@ export class Orchestrator {
       text: message.text.substring(0, 100),
     }, 'Processing message');
 
+    // Check if this is a reply to a SpokeStack notification
+    if (this.spokestackHandler && message.reply_to) {
+      const original = await this.messageStore.get(message.reply_to);
+      if (original && this.spokestackHandler.isReplyToSpokeStack(message, original)) {
+        await this.spokestackHandler.handleResponse(message, original);
+        this.eventHandler?.('spokestack:response_routed', {
+          id: queueMsg.id,
+          original_id: message.reply_to,
+          timestamp: new Date().toISOString(),
+        });
+        return; // Don't route to agent — this is a callback
+      }
+    }
+
     // Route the message to the best agent
     const decision = this.router.route(message);
 
@@ -406,11 +457,17 @@ export class Orchestrator {
 
       // Send response back through the originating channel
       if (this.channelSender && message.direction === 'inbound') {
-        await this.channelSender(message.channel, message.from, response.text, {
+        const responseMetadata = {
           agent: decision.agent,
           provider: response.provider_id,
           message_id: message.id,
-        });
+        };
+        await this.channelSender(message.channel, message.from, response.text, responseMetadata);
+
+        // Store outbound message for reply matching (SpokeStack, etc.)
+        if (message.metadata?.type) {
+          await this.messageStore.store(message);
+        }
       }
     } catch (err) {
       logger.error({

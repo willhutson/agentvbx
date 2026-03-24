@@ -20,6 +20,7 @@ export type {
 // Queue
 export { RedisStreams } from './queue/index.js';
 export type { RedisStreamsConfig } from './queue/index.js';
+export { MessageStore } from './queue/index.js';
 
 // Routing
 export { MessageRouter } from './routing/index.js';
@@ -35,11 +36,16 @@ export type {
   ConfirmationHandler,
   NotificationHandler,
 } from './recipe/index.js';
+export { exportRecipeAsCanvas } from './recipe/index.js';
+export { importCanvasAsRecipe } from './recipe/index.js';
+export type { CanvasExport, CanvasNode, CanvasEdge, CanvasParameter } from './recipe/index.js';
 
 // Step handlers
 export { AgentStepHandler } from './handlers/index.js';
 export { IntegrationReadHandler, IntegrationWriteHandler } from './handlers/index.js';
 export { NotificationStepHandler } from './handlers/index.js';
+export { SpokeStackResponseHandler } from './handlers/index.js';
+export type { SpokeStackAdapterLike } from './handlers/index.js';
 
 // Artifacts
 export { ArtifactManager } from './artifacts/index.js';
