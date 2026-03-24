@@ -1,0 +1,52 @@
+name: "Voice Note to Social Video"
+description: "Send a voice note describing a video idea. Get a fully produced social video back."
+trigger:
+  type: voice_note
+  channel: whatsapp
+
+steps:
+  - name: "Transcribe idea"
+    type: agent
+    agent: researcher
+    provider: ollama
+    input: voice_audio
+    output: transcript
+    params:
+      instruction: "Transcribe this voice note. Extract: video topic, target platform, preferred style/mood, any specific requirements."
+
+  - name: "Trigger SpokeStack Canvas"
+    type: integration_write
+    integration: spokestack
+    action: create
+    input: transcript
+    output: canvas_run
+    params:
+      resource: "canvas/from-recipe"
+      recipe_template: "social-video-pipeline"
+
+  - name: "Notify: pipeline started"
+    type: notification
+    channel: whatsapp
+    input: canvas_run
+    output: notification_result
+    params:
+      message: "🎬 Video pipeline started!\n\nI'll create a script, storyboard, generate video clips, add voiceover + music, and send you the final cut for approval.\n\nThis usually takes 5-10 minutes. I'll message you at each review step."
+
+marketplace:
+  id: recipe-spokestack-voice-to-video-v1
+  creator: agentvbx
+  title: "Voice Note to Social Video"
+  description: "Send a WhatsApp voice note describing a video idea. AgentVBX transcribes, triggers the SpokeStack creative pipeline, and delivers the final video back via WhatsApp."
+  category: creative
+  tags:
+    - spokestack
+    - voice
+    - video
+    - social_media
+    - creative
+  version: "1.0"
+  required_tools:
+    - spokestack
+    - ollama
+  pricing:
+    type: free

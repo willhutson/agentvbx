@@ -1,0 +1,61 @@
+name: "Quick Social Image"
+description: "Describe an image, get AI-generated options back on WhatsApp."
+trigger:
+  type: message
+  channel: whatsapp
+  filter: "starts_with:image|create image|make me|design"
+
+steps:
+  - name: "Parse request"
+    type: agent
+    agent: creative-director
+    input: user_message
+    output: image_brief
+    params:
+      instruction: "Extract: image description, style (photo/illustration/3d), aspect ratio (1:1/16:9/9:16), brand context if mentioned. Output as JSON."
+
+  - name: "Trigger image generation"
+    type: integration_write
+    integration: spokestack
+    action: create
+    input: image_brief
+    output: generation_result
+    params:
+      resource: "canvas/quick-generate"
+      asset_type: "image"
+      num_variants: 3
+
+  - name: "Confirm variants"
+    type: agent
+    agent: creative-director
+    input: generation_result
+    gate: human_approval
+    output: selected_variant
+    params:
+      instruction: "Show the user 3 image options with numbered thumbnails. Ask them to pick one or request changes."
+
+  - name: "Deliver"
+    type: notification
+    channel: whatsapp
+    input: selected_variant
+    output: delivery_result
+    params:
+      message: "Here's your image! 🎨\nSaved to your content library.\n\nReply PUBLISH to post it, or just save for later."
+
+marketplace:
+  id: recipe-spokestack-quick-social-image-v1
+  creator: agentvbx
+  title: "Quick Social Image"
+  description: "Describe an image via WhatsApp, get 3 AI-generated options to choose from. Pick your favorite and optionally publish directly."
+  category: creative
+  tags:
+    - spokestack
+    - image
+    - social_media
+    - creative
+    - whatsapp
+  version: "1.0"
+  required_tools:
+    - spokestack
+  pricing:
+    type: free

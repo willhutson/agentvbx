@@ -1,0 +1,63 @@
+name: "Weekly Content Batch"
+description: "Generate a week's worth of social content for a client — images, captions, scheduling."
+trigger:
+  type: schedule
+  cron: "0 9 * * MON"
+
+steps:
+  - name: "Get this week's calendar"
+    type: integration_read
+    integration: spokestack
+    action: list
+    input: calendar_params
+    output: content_calendar
+    params:
+      resource: "studio/posts"
+      status: "DRAFT"
+      date_range: "this_week"
+
+  - name: "Generate images for posts"
+    type: integration_write
+    integration: spokestack
+    action: create
+    input: content_calendar
+    output: generated_images
+    params:
+      resource: "canvas/batch-generate"
+      asset_type: "image"
+      quality: "standard"
+
+  - name: "Review batch"
+    type: agent
+    agent: creative-director
+    input: generated_images
+    gate: human_approval
+    output: approved_batch
+    params:
+      instruction: "Present all generated images alongside their post captions. Ask user to approve the batch or flag specific posts for regeneration."
+
+  - name: "Notify"
+    type: notification
+    channel: whatsapp
+    input: approved_batch
+    output: notification_result
+    params:
+      message: "✅ This week's content is ready!\n\n📸 {{count}} posts with images\n📅 Scheduled: {{date_range}}\n\nView in SpokeStack: {{calendar_url}}"
+
+marketplace:
+  id: recipe-spokestack-content-batch-v1
+  creator: agentvbx
+  title: "Weekly Content Batch"
+  description: "Automatically generate a week's worth of social media content every Monday — images, captions, and scheduling via SpokeStack."
+  category: creative
+  tags:
+    - spokestack
+    - content
+    - social_media
+    - scheduling
+    - batch
+  version: "1.0"
+  required_tools:
+    - spokestack
+  pricing:
+    type: free
