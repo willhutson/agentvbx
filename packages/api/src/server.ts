@@ -17,6 +17,7 @@ import { createWebhookRouter } from './routes/webhooks/index.js';
 import { MessageHistoryService } from './services/messageHistory.js';
 import { createMessagesRouter } from './routes/messages.js';
 import healthRouter from './routes/health.js';
+import eventsRouter from './routes/events.js';
 
 const logger = createLogger('api-server');
 
@@ -62,6 +63,9 @@ export class ApiServer {
     // Phase 3: Channel health + message history routes
     this.app.use('/health', healthRouter);
     this.app.use('/api/v1/messages', createMessagesRouter(this.messageHistory));
+
+    // Phase 4: SSE event stream for Mission Control
+    this.app.use('/api/v1/events', eventsRouter);
   }
 
   /**

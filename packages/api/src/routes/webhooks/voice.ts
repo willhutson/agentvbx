@@ -18,6 +18,7 @@ import type { MessageHistoryService, StoredMessage } from '../../services/messag
 import { orgSlugMiddleware } from '../../middleware/orgSlugMiddleware.js';
 import { rateLimiterMiddleware } from '../../middleware/rateLimiter.js';
 import { channelHealth } from '../../services/channelHealth.js';
+import { eventStream } from '../../services/eventStream.js';
 
 const logger = createLogger('webhook-voice');
 
@@ -63,6 +64,16 @@ export function createVoiceWebhookRouter(
 
       // Track channel health for all voice events
       channelHealth.recordMessage(org.orgId, channel);
+
+      // Publish SSE event for Mission Control
+      eventStream.publish({
+        orgId: org.orgId,
+        action: 'message.received',
+        entityType: channel === 'voice' ? 'CALL' : 'MESSAGE',
+        channel,
+        timestamp: new Date().toISOString(),
+        metadata: { from, to, eventType },
+      });
 
       // For transcription events and SMS, create a message for the orchestrator.
       if (eventType === 'call.transcription' || eventType === 'message.received') {
@@ -114,6 +125,19 @@ export function createVoiceWebhookRouter(
         }
 
         const queueId = await orchestrator.handleMessage(message);
+
+        // Publish agent.responded SSE event
+        eventStream.publish({
+          orgId: org.orgId,
+          action: 'agent.responded',
+          entityType: channel === 'voice' ? 'CALL' : 'MESSAGE',
+          entityId: messageId,
+          agentType: 'orchestrator',
+          channel,
+          timestamp: new Date().toISOString(),
+          metadata: { callId: payload.call_control_id },
+        });
+
         logger.info(
           { orgId: org.orgId, slug: req.params.orgSlug, eventType, queueId },
           'Voice webhook routed',

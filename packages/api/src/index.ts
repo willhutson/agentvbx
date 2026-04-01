@@ -17,3 +17,7 @@ export { channelHealth } from './services/channelHealth.js';
 export type { ChannelHealthRecord, ChannelHealthAlert } from './services/channelHealth.js';
 export { MessageHistoryService } from './services/messageHistory.js';
 export type { StoredMessage, MessageHistoryConfig } from './services/messageHistory.js';
+
+// Phase 4: SSE event stream for Mission Control
+export { eventStream } from './services/eventStream.js';
+export type { AgentEvent } from './services/eventStream.js';
