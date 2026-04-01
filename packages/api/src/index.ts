@@ -21,3 +21,7 @@ export type { StoredMessage, MessageHistoryConfig } from './services/messageHist
 // Phase 4: SSE event stream for Mission Control
 export { eventStream } from './services/eventStream.js';
 export type { AgentEvent } from './services/eventStream.js';
+
+// Phase 7D: SpokeStack entity event webhook
+export { createSpokeStackEventsRouter, resolveRecipe } from './routes/webhooks/spokestack-events.js';
+export type { EntityEvent } from './routes/webhooks/spokestack-events.js';

@@ -18,6 +18,7 @@ import { MessageHistoryService } from './services/messageHistory.js';
 import { createMessagesRouter } from './routes/messages.js';
 import healthRouter from './routes/health.js';
 import eventsRouter from './routes/events.js';
+import { createSpokeStackEventsRouter } from './routes/webhooks/spokestack-events.js';
 
 const logger = createLogger('api-server');
 
@@ -66,6 +67,9 @@ export class ApiServer {
 
     // Phase 4: SSE event stream for Mission Control
     this.app.use('/api/v1/events', eventsRouter);
+
+    // Phase 7D: SpokeStack entity event webhook receiver
+    this.app.use('/api/webhooks/spokestack-events', createSpokeStackEventsRouter());
   }
 
   /**

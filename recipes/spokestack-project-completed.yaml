@@ -1,0 +1,85 @@
+name: project-completed-notification
+description: Notify team when a project is completed
+version: "1.0"
+trigger:
+  type: webhook
+  event: entity.event
+  source: spokestack-core
+  filters:
+    entityType: Project
+    action: status_changed
+    metadata.toStatus: COMPLETED
+
+variables:
+  project_id: "{{ trigger.payload.entityId }}"
+  org_id: "{{ trigger.payload.organizationId }}"
+  from_status: "{{ trigger.payload.metadata.fromStatus }}"
+
+steps:
+  - id: fetch_project
+    type: api_call
+    config:
+      method: GET
+      url: "{{ env.SPOKESTACK_CORE_URL }}/api/v1/projects/{{ project_id }}"
+      headers:
+        X-API-Key: "{{ env.SPOKESTACK_API_KEY }}"
+        X-Org-Id: "{{ org_id }}"
+
+  - id: fetch_client
+    type: api_call
+    config:
+      method: GET
+      url: "{{ env.SPOKESTACK_CORE_URL }}/api/v1/clients/{{ steps.fetch_project.result.clientId }}"
+      headers:
+        X-API-Key: "{{ env.SPOKESTACK_API_KEY }}"
+        X-Org-Id: "{{ org_id }}"
+    conditions:
+      - "{{ steps.fetch_project.result.clientId }}"
+
+  - id: format_message
+    type: transform
+    config:
+      template: |
+        ✅ *Project Completed*
+
+        *{{ steps.fetch_project.result.name }}*
+        {% if steps.fetch_client.result %}
+        Client: {{ steps.fetch_client.result.name }}
+        {% endif %}
+        Status: {{ from_status }} → COMPLETED
+
+        Time to celebrate and send that final invoice! 🎉
+
+  - id: get_team
+    type: api_call
+    config:
+      method: GET
+      url: "{{ env.SPOKESTACK_CORE_URL }}/api/v1/members?role=OWNER"
+      headers:
+        X-API-Key: "{{ env.SPOKESTACK_API_KEY }}"
+        X-Org-Id: "{{ org_id }}"
+
+  - id: notify_owner
+    type: send_message
+    config:
+      channel: whatsapp
+      to: "{{ steps.get_team.result[0].phone }}"
+      message: "{{ steps.format_message.result }}"
+    conditions:
+      - "{{ steps.get_team.result[0].phone }}"
+
+marketplace:
+  id: recipe-project-completed-v1
+  creator: agentvbx
+  title: "Project Completed Notification"
+  description: "Sends a WhatsApp notification when a project status changes to COMPLETED. Includes project name, client, and status transition."
+  category: operations
+  tags:
+    - project
+    - notifications
+    - status
+  version: "1.0"
+  required_tools:
+    - spokestack
+  pricing:
+    type: free

@@ -1,0 +1,68 @@
+name: custom-event-notification
+description: Template — customize to get notified about any SpokeStack event
+version: "1.0"
+trigger:
+  type: webhook
+  event: entity.event
+  source: spokestack-core
+  filters:
+    # Customize these:
+    entityType: "*"    # Client, Task, Project, Brief, Order, Integration, Asset
+    action: "*"        # created, updated, deleted, status_changed
+
+variables:
+  entity_type: "{{ trigger.payload.entityType }}"
+  entity_id: "{{ trigger.payload.entityId }}"
+  action: "{{ trigger.payload.action }}"
+  org_id: "{{ trigger.payload.organizationId }}"
+  metadata: "{{ trigger.payload.metadata }}"
+
+steps:
+  - id: format_message
+    type: transform
+    config:
+      template: |
+        📣 *{{ entity_type }} {{ action }}*
+
+        Entity ID: {{ entity_id }}
+        {% if metadata.fromStatus and metadata.toStatus %}
+        Status: {{ metadata.fromStatus }} → {{ metadata.toStatus }}
+        {% endif %}
+        {% if metadata.changedFields %}
+        Changed: {{ metadata.changedFields | join(', ') }}
+        {% endif %}
+
+  - id: get_owner
+    type: api_call
+    config:
+      method: GET
+      url: "{{ env.SPOKESTACK_CORE_URL }}/api/v1/members?role=OWNER"
+      headers:
+        X-API-Key: "{{ env.SPOKESTACK_API_KEY }}"
+        X-Org-Id: "{{ org_id }}"
+
+  - id: notify
+    type: send_message
+    config:
+      channel: whatsapp
+      to: "{{ steps.get_owner.result[0].phone }}"
+      message: "{{ steps.format_message.result }}"
+    conditions:
+      - "{{ steps.get_owner.result[0].phone }}"
+
+marketplace:
+  id: recipe-custom-event-template-v1
+  creator: agentvbx
+  title: "Custom Event Notification (Template)"
+  description: "A starting template for building custom event notifications. Subscribe to any entity type and action, then customize the message format."
+  category: templates
+  tags:
+    - template
+    - events
+    - notifications
+    - customizable
+  version: "1.0"
+  required_tools:
+    - spokestack
+  pricing:
+    type: free

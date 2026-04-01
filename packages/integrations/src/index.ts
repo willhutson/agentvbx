@@ -51,3 +51,11 @@ export type {
   LeadgenEntry,
   ProcessedLead,
 } from './meta-webhooks.js';
+
+// Event Subscriber
+export {
+  registerEventWebhook,
+  registerAllVBXSubscriptions,
+  VBX_EVENT_SUBSCRIPTIONS,
+} from './event-subscriber.js';
+export type { EventSubscriptionConfig, EventSubscriptionResult } from './event-subscriber.js';
