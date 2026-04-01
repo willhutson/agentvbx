@@ -17,6 +17,7 @@ import type { MessageHistoryService, StoredMessage } from '../../services/messag
 import { orgSlugMiddleware } from '../../middleware/orgSlugMiddleware.js';
 import { rateLimiterMiddleware } from '../../middleware/rateLimiter.js';
 import { channelHealth } from '../../services/channelHealth.js';
+import { eventStream } from '../../services/eventStream.js';
 
 const logger = createLogger('webhook-whatsapp');
 
@@ -73,6 +74,17 @@ export function createWhatsAppWebhookRouter(
       // Track channel health
       channelHealth.recordMessage(org.orgId, 'whatsapp');
 
+      // Publish SSE event for Mission Control
+      eventStream.publish({
+        orgId: org.orgId,
+        action: 'message.received',
+        entityType: 'MESSAGE',
+        entityId: message.id,
+        channel: 'whatsapp',
+        timestamp: message.timestamp,
+        metadata: { from, to, messagePreview: text?.substring(0, 100) },
+      });
+
       // Save to message history (fire-and-forget)
       if (messageHistory) {
         const stored: StoredMessage = {
@@ -91,6 +103,17 @@ export function createWhatsAppWebhookRouter(
       }
 
       const queueId = await orchestrator.handleMessage(message);
+
+      // Publish agent.responded SSE event
+      eventStream.publish({
+        orgId: org.orgId,
+        action: 'agent.responded',
+        entityType: 'MESSAGE',
+        entityId: message.id,
+        agentType: 'orchestrator',
+        channel: 'whatsapp',
+        timestamp: new Date().toISOString(),
+      });
 
       logger.info(
         { orgId: org.orgId, slug: req.params.orgSlug, from, queueId },
