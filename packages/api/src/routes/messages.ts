@@ -48,7 +48,7 @@ export function createMessagesRouter(
    * Query: ?limit=50&before=<unix_ms>
    */
   router.get('/:orgId', requireAuth, async (req: Request, res: Response) => {
-    const { orgId } = req.params;
+    const orgId = Array.isArray(req.params.orgId) ? req.params.orgId[0] : req.params.orgId;
     const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10) || 50, 200);
     const before = req.query.before ? parseInt(String(req.query.before), 10) : undefined;
 
@@ -73,7 +73,7 @@ export function createMessagesRouter(
    * GET /api/v1/messages/:orgId/count
    */
   router.get('/:orgId/count', requireAuth, async (req: Request, res: Response) => {
-    const { orgId } = req.params;
+    const orgId = Array.isArray(req.params.orgId) ? req.params.orgId[0] : req.params.orgId;
     try {
       const count = await historyService.getMessageCount(orgId);
       res.json({ orgId, count, windowDays: 7 });

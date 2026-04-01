@@ -8,7 +8,7 @@
  * Uses ioredis, matching the existing Redis pattern in packages/orchestrator.
  */
 
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { createLogger } from '../logger.js';
 
 const logger = createLogger('message-history');
@@ -59,11 +59,11 @@ export class MessageHistoryService {
       password: config?.password ?? process.env.REDIS_PASSWORD ?? undefined,
       db: config?.db ?? 0,
       lazyConnect: true,
-      retryStrategy: (times) => Math.min(times * 200, 5000),
+      retryStrategy: (times: number) => Math.min(times * 200, 5000),
       maxRetriesPerRequest: 3,
     });
 
-    this.redis.on('error', (err) => {
+    this.redis.on('error', (err: Error) => {
       logger.error({ err }, 'Message history Redis error');
     });
   }
