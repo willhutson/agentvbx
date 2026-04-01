@@ -17,6 +17,8 @@ const logger = createLogger('voice-bridge');
 export interface VoiceBridgeConfig {
   tenant_id: string;
   number_id: string;
+  /** Organization ID from spokestack-core (overrides tenant_id if set). */
+  org_id?: string;
   default_voice?: string;
   default_greeting?: string;
   voice_ai_instructions?: string;
@@ -142,7 +144,7 @@ export class VoiceBridge {
     // Publish transcription as a voice message to the queue
     const message = {
       id: uuid(),
-      tenant_id: this.config.tenant_id,
+      tenant_id: this.config.org_id ?? this.config.tenant_id,
       number_id: this.config.number_id,
       channel: 'voice' as const,
       direction: 'inbound' as const,
@@ -155,7 +157,7 @@ export class VoiceBridge {
         duration_seconds: 0,
         transcript: text,
       },
-      metadata: { event_type: 'transcription' },
+      metadata: { event_type: 'transcription', org_id: this.config.org_id },
     };
 
     await this.publisher.handleMessage(message);
@@ -171,7 +173,7 @@ export class VoiceBridge {
 
     const message = {
       id: uuid(),
-      tenant_id: this.config.tenant_id,
+      tenant_id: this.config.org_id ?? this.config.tenant_id,
       number_id: this.config.number_id,
       channel: 'sms' as const,
       direction: 'inbound' as const,
@@ -181,6 +183,7 @@ export class VoiceBridge {
       timestamp: event.data.occurred_at,
       metadata: {
         media: payload.media,
+        org_id: this.config.org_id,
       },
     };
 

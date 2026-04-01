@@ -13,6 +13,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { v4 as uuid } from 'uuid';
 import { createLogger } from './logger.js';
 import type { Orchestrator } from './types.js';
+import { createWebhookRouter } from './routes/webhooks/index.js';
 
 const logger = createLogger('api-server');
 
@@ -49,6 +50,9 @@ export class ApiServer {
 
     this.setupWebSocket();
     this.setupRoutes();
+
+    // Mount per-tenant webhook routes at /webhook/:orgSlug/<channel>
+    this.app.use('/webhook', createWebhookRouter(() => this.orchestrator));
   }
 
   /**
