@@ -1,0 +1,75 @@
+name: brief-assigned-notification
+description: Notify team member when they are assigned a new brief
+version: "1.0"
+trigger:
+  type: webhook
+  event: entity.event
+  source: spokestack-core
+  filters:
+    entityType: Brief
+    action: updated
+    metadata.changedFields: assigneeId
+
+variables:
+  brief_id: "{{ trigger.payload.entityId }}"
+  org_id: "{{ trigger.payload.organizationId }}"
+
+steps:
+  - id: fetch_brief
+    type: api_call
+    config:
+      method: GET
+      url: "{{ env.SPOKESTACK_CORE_URL }}/api/v1/briefs/{{ brief_id }}"
+      headers:
+        X-API-Key: "{{ env.SPOKESTACK_API_KEY }}"
+        X-Org-Id: "{{ org_id }}"
+
+  - id: fetch_assignee
+    type: api_call
+    config:
+      method: GET
+      url: "{{ env.SPOKESTACK_CORE_URL }}/api/v1/members/{{ steps.fetch_brief.result.assigneeId }}"
+      headers:
+        X-API-Key: "{{ env.SPOKESTACK_API_KEY }}"
+        X-Org-Id: "{{ org_id }}"
+    conditions:
+      - "{{ steps.fetch_brief.result.assigneeId }}"
+
+  - id: format_message
+    type: transform
+    config:
+      template: |
+        📋 *New Brief Assigned*
+
+        *{{ steps.fetch_brief.result.title }}*
+        Priority: {{ steps.fetch_brief.result.priority | default('Normal') }}
+        {% if steps.fetch_brief.result.deadline %}
+        Deadline: {{ steps.fetch_brief.result.deadline }}
+        {% endif %}
+
+        Open SpokeStack to review the brief details.
+
+  - id: notify_assignee
+    type: send_message
+    config:
+      channel: whatsapp
+      to: "{{ steps.fetch_assignee.result.phone }}"
+      message: "{{ steps.format_message.result }}"
+    conditions:
+      - "{{ steps.fetch_assignee.result.phone }}"
+
+marketplace:
+  id: recipe-brief-assigned-v1
+  creator: agentvbx
+  title: "Brief Assigned Notification"
+  description: "Sends a WhatsApp notification to a team member when they are assigned a new brief. Includes brief title, priority, and deadline."
+  category: operations
+  tags:
+    - brief
+    - notifications
+    - assignment
+  version: "1.0"
+  required_tools:
+    - spokestack
+  pricing:
+    type: free

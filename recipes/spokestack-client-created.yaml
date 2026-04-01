@@ -1,0 +1,76 @@
+name: client-created-notification
+description: Notify when a new client is added to the organization
+version: "1.0"
+trigger:
+  type: webhook
+  event: entity.event
+  source: spokestack-core
+  filters:
+    entityType: Client
+    action: created
+
+variables:
+  client_id: "{{ trigger.payload.entityId }}"
+  org_id: "{{ trigger.payload.organizationId }}"
+  user_id: "{{ trigger.payload.userId }}"
+
+steps:
+  - id: fetch_client
+    type: api_call
+    config:
+      method: GET
+      url: "{{ env.SPOKESTACK_CORE_URL }}/api/v1/clients/{{ client_id }}"
+      headers:
+        X-API-Key: "{{ env.SPOKESTACK_API_KEY }}"
+        X-Org-Id: "{{ org_id }}"
+
+  - id: format_message
+    type: transform
+    config:
+      template: |
+        🆕 *New Client Added*
+
+        *{{ steps.fetch_client.result.name }}*
+        {% if steps.fetch_client.result.company %}
+        Company: {{ steps.fetch_client.result.company }}
+        {% endif %}
+        {% if steps.fetch_client.result.industry %}
+        Industry: {{ steps.fetch_client.result.industry }}
+        {% endif %}
+        {% if steps.fetch_client.result.email %}
+        Email: {{ steps.fetch_client.result.email }}
+        {% endif %}
+
+  - id: get_owner
+    type: api_call
+    config:
+      method: GET
+      url: "{{ env.SPOKESTACK_CORE_URL }}/api/v1/members?role=OWNER"
+      headers:
+        X-API-Key: "{{ env.SPOKESTACK_API_KEY }}"
+        X-Org-Id: "{{ org_id }}"
+
+  - id: notify_owner
+    type: send_message
+    config:
+      channel: whatsapp
+      to: "{{ steps.get_owner.result[0].phone }}"
+      message: "{{ steps.format_message.result }}"
+    conditions:
+      - "{{ steps.get_owner.result[0].phone }}"
+
+marketplace:
+  id: recipe-client-created-v1
+  creator: agentvbx
+  title: "New Client Notification"
+  description: "Sends a WhatsApp notification to the org owner when a new client is created. Includes client name, company, industry, and email."
+  category: operations
+  tags:
+    - client
+    - notifications
+    - crm
+  version: "1.0"
+  required_tools:
+    - spokestack
+  pricing:
+    type: free
