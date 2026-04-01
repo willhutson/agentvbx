@@ -62,7 +62,7 @@ function authenticateSSE(req: Request, res: Response, next: NextFunction): void 
 // ─── SSE Endpoint ───────────────────────────────────────────────────────────
 
 router.get('/:orgId', authenticateSSE, (req: Request, res: Response) => {
-  const { orgId } = req.params;
+  const orgId = req.params.orgId as string;
 
   // SSE headers
   res.writeHead(200, {
