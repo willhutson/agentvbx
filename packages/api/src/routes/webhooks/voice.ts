@@ -5,7 +5,8 @@
  * GET  /webhook/:orgSlug/voice (Telnyx verification)
  *
  * Resolves org by slug, validates voice channel is active,
- * then routes the Telnyx event to the orchestrator with orgId context.
+ * rate-limits per org, then routes the Telnyx event to the
+ * orchestrator with orgId context.
  */
 
 import { Router, type Request, type Response } from 'express';
@@ -13,7 +14,10 @@ import { v4 as uuid } from 'uuid';
 import { createLogger } from '../../logger.js';
 import type { Orchestrator } from '../../types.js';
 import type { OrgResolver } from '../../services/orgResolver.js';
+import type { MessageHistoryService, StoredMessage } from '../../services/messageHistory.js';
 import { orgSlugMiddleware } from '../../middleware/orgSlugMiddleware.js';
+import { rateLimiterMiddleware } from '../../middleware/rateLimiter.js';
+import { channelHealth } from '../../services/channelHealth.js';
 
 const logger = createLogger('webhook-voice');
 
@@ -25,12 +29,14 @@ function channelForEvent(eventType: string): 'voice' | 'sms' {
 export function createVoiceWebhookRouter(
   resolver: OrgResolver,
   getOrchestrator: () => Orchestrator | undefined,
+  messageHistory?: MessageHistoryService,
 ): Router {
   const router = Router({ mergeParams: true });
 
   router.post(
     '/',
     orgSlugMiddleware(resolver, 'voice'),
+    rateLimiterMiddleware,
     async (req: Request, res: Response) => {
       const orchestrator = getOrchestrator();
       if (!orchestrator) {
@@ -55,15 +61,19 @@ export function createVoiceWebhookRouter(
       const from = payload.from ?? 'unknown';
       const to = payload.to ?? 'unknown';
 
+      // Track channel health for all voice events
+      channelHealth.recordMessage(org.orgId, channel);
+
       // For transcription events and SMS, create a message for the orchestrator.
-      // Call control events (initiated, answered, hangup) are logged but don't
-      // create messages — they'll be handled by the voice bridge if wired.
       if (eventType === 'call.transcription' || eventType === 'message.received') {
         const text = (payload.text as string) ?? '';
         if (!text.trim()) return;
 
+        const messageId = uuid();
+        const timestamp = event.data.occurred_at ?? new Date().toISOString();
+
         const message = {
-          id: uuid(),
+          id: messageId,
           tenant_id: org.orgId,
           number_id: to,
           channel,
@@ -71,7 +81,7 @@ export function createVoiceWebhookRouter(
           from,
           to,
           text,
-          timestamp: event.data.occurred_at ?? new Date().toISOString(),
+          timestamp,
           call_metadata: channel === 'voice'
             ? {
                 call_id: payload.call_control_id ?? '',
@@ -85,6 +95,23 @@ export function createVoiceWebhookRouter(
             event_type: eventType,
           },
         };
+
+        // Save to message history (fire-and-forget)
+        if (messageHistory) {
+          const stored: StoredMessage = {
+            id: messageId,
+            orgId: org.orgId,
+            channel,
+            direction: 'inbound',
+            content: text,
+            from,
+            timestamp,
+            metadata: { event_type: eventType },
+          };
+          messageHistory.addMessage(org.orgId, stored).catch(err =>
+            logger.error({ err }, 'Failed to save voice message to history'),
+          );
+        }
 
         const queueId = await orchestrator.handleMessage(message);
         logger.info(

@@ -14,6 +14,9 @@ import { v4 as uuid } from 'uuid';
 import { createLogger } from './logger.js';
 import type { Orchestrator } from './types.js';
 import { createWebhookRouter } from './routes/webhooks/index.js';
+import { MessageHistoryService } from './services/messageHistory.js';
+import { createMessagesRouter } from './routes/messages.js';
+import healthRouter from './routes/health.js';
 
 const logger = createLogger('api-server');
 
@@ -39,6 +42,7 @@ export class ApiServer {
   private wss: WebSocketServer;
   private wsClients: Set<WebSocket> = new Set();
   private orchestrator?: Orchestrator;
+  private messageHistory: MessageHistoryService;
 
   constructor(private config: ApiServerConfig) {
     this.app = express();
@@ -47,12 +51,17 @@ export class ApiServer {
 
     this.httpServer = createServer(this.app);
     this.wss = new WebSocketServer({ server: this.httpServer, path: '/ws' });
+    this.messageHistory = new MessageHistoryService();
 
     this.setupWebSocket();
     this.setupRoutes();
 
     // Mount per-tenant webhook routes at /webhook/:orgSlug/<channel>
-    this.app.use('/webhook', createWebhookRouter(() => this.orchestrator));
+    this.app.use('/webhook', createWebhookRouter(() => this.orchestrator, this.messageHistory));
+
+    // Phase 3: Channel health + message history routes
+    this.app.use('/health', healthRouter);
+    this.app.use('/api/v1/messages', createMessagesRouter(this.messageHistory));
   }
 
   /**
