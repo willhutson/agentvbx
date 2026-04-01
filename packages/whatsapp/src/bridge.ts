@@ -15,6 +15,8 @@ const logger = createLogger('whatsapp-bridge');
 export interface WhatsAppBridgeConfig {
   tenant_id: string;
   number_id: string;
+  /** Organization ID from spokestack-core (overrides tenant_id if set). */
+  org_id?: string;
 }
 
 export interface MessagePublisher {
@@ -80,7 +82,7 @@ export class WhatsAppBridge {
 
     const message = {
       id: msg.id || uuid(),
-      tenant_id: this.config.tenant_id,
+      tenant_id: this.config.org_id ?? this.config.tenant_id,
       number_id: this.config.number_id,
       channel: 'whatsapp' as const,
       direction: 'inbound' as const,
@@ -92,6 +94,7 @@ export class WhatsAppBridge {
         has_media: msg.hasMedia,
         is_group: msg.isGroup,
         author: msg.author,
+        org_id: this.config.org_id,
       },
     };
 
