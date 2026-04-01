@@ -10,3 +10,10 @@ export { OrgResolver } from './services/orgResolver.js';
 export type { OrgConfig } from './services/orgResolver.js';
 export { orgSlugMiddleware } from './middleware/orgSlugMiddleware.js';
 export { createWebhookRouter } from './routes/webhooks/index.js';
+
+// Phase 3: Production hardening
+export { rateLimiterMiddleware, resetBuckets, TIER_LIMITS } from './middleware/rateLimiter.js';
+export { channelHealth } from './services/channelHealth.js';
+export type { ChannelHealthRecord, ChannelHealthAlert } from './services/channelHealth.js';
+export { MessageHistoryService } from './services/messageHistory.js';
+export type { StoredMessage, MessageHistoryConfig } from './services/messageHistory.js';

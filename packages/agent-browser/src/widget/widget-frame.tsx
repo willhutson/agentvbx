@@ -32,6 +32,7 @@ export function WidgetFrame({ tenantSlug, channelToken, apiBaseUrl }: WidgetFram
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -72,6 +73,40 @@ export function WidgetFrame({ tenantSlug, channelToken, apiBaseUrl }: WidgetFram
       ws.close();
     };
   }, [baseUrl, tenantSlug]);
+
+  // ─── Load Message History ────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!tenantSlug) return;
+
+    fetch(`${baseUrl}/api/v1/messages/${encodeURIComponent(tenantSlug)}?limit=50`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(channelToken ? { Authorization: `Bearer ${channelToken}` } : {}),
+      },
+    })
+      .then(res => res.ok ? res.json() : Promise.reject(res.status))
+      .then((data: { messages?: Array<{ id: string; direction: string; content: string; timestamp: string }> }) => {
+        if (data.messages && data.messages.length > 0) {
+          const historicMessages: ChatMessage[] = data.messages
+            .reverse() // getHistory returns newest first; show oldest first
+            .map((msg) => ({
+              id: msg.id,
+              role: (msg.direction === 'inbound' ? 'user' : 'assistant') as 'user' | 'assistant',
+              text: msg.content,
+              timestamp: msg.timestamp,
+            }));
+          setMessages((prev) => [...historicMessages, ...prev]);
+        }
+      })
+      .catch((err) => {
+        // History load failure is non-fatal — widget still works without it
+        console.warn('[AgentVBX Widget] Failed to load message history:', err);
+      })
+      .finally(() => {
+        setHistoryLoaded(true);
+      });
+  }, [baseUrl, tenantSlug, channelToken]);
 
   // ─── Auto-scroll ────────────────────────────────────────────────────
 
@@ -138,7 +173,7 @@ export function WidgetFrame({ tenantSlug, channelToken, apiBaseUrl }: WidgetFram
       <div style={styles.messagesArea}>
         {messages.length === 0 && (
           <div style={styles.emptyState}>
-            Send a message to get started.
+            {historyLoaded ? 'Send a message to get started.' : 'Loading...'}
           </div>
         )}
         {messages.map((msg) => (

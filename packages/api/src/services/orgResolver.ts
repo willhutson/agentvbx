@@ -15,6 +15,7 @@ export interface OrgConfig {
   orgId: string;
   channels: Record<string, boolean>;
   active: boolean;
+  tier: string;  // 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS'
 }
 
 interface CacheEntry {
@@ -67,6 +68,7 @@ export class OrgResolver {
         orgId: String(body.orgId ?? body.id ?? ''),
         channels: (body.channels as Record<string, boolean>) ?? {},
         active: body.active !== false,
+        tier: String(body.tier ?? 'FREE').toUpperCase(),
       };
 
       // Cache the result

@@ -4,7 +4,8 @@
  * POST /webhook/:orgSlug/whatsapp
  *
  * Resolves org by slug, validates WhatsApp channel is active,
- * then normalizes the payload and routes to the orchestrator with orgId context.
+ * rate-limits per org, then normalizes the payload and routes
+ * to the orchestrator with orgId context.
  */
 
 import { Router, type Request, type Response } from 'express';
@@ -12,19 +13,24 @@ import { v4 as uuid } from 'uuid';
 import { createLogger } from '../../logger.js';
 import type { Orchestrator } from '../../types.js';
 import type { OrgResolver } from '../../services/orgResolver.js';
+import type { MessageHistoryService, StoredMessage } from '../../services/messageHistory.js';
 import { orgSlugMiddleware } from '../../middleware/orgSlugMiddleware.js';
+import { rateLimiterMiddleware } from '../../middleware/rateLimiter.js';
+import { channelHealth } from '../../services/channelHealth.js';
 
 const logger = createLogger('webhook-whatsapp');
 
 export function createWhatsAppWebhookRouter(
   resolver: OrgResolver,
   getOrchestrator: () => Orchestrator | undefined,
+  messageHistory?: MessageHistoryService,
 ): Router {
   const router = Router({ mergeParams: true });
 
   router.post(
     '/',
     orgSlugMiddleware(resolver, 'whatsapp'),
+    rateLimiterMiddleware,
     async (req: Request, res: Response) => {
       const orchestrator = getOrchestrator();
       if (!orchestrator) {
@@ -63,6 +69,26 @@ export function createWhatsAppWebhookRouter(
           has_media: !!(waMsg?.image ?? waMsg?.video ?? waMsg?.audio ?? waMsg?.document),
         },
       };
+
+      // Track channel health
+      channelHealth.recordMessage(org.orgId, 'whatsapp');
+
+      // Save to message history (fire-and-forget)
+      if (messageHistory) {
+        const stored: StoredMessage = {
+          id: message.id,
+          orgId: org.orgId,
+          channel: 'whatsapp',
+          direction: 'inbound',
+          content: text,
+          from,
+          timestamp,
+          metadata: { org_slug: req.params.orgSlug },
+        };
+        messageHistory.addMessage(org.orgId, stored).catch(err =>
+          logger.error({ err }, 'Failed to save WhatsApp message to history'),
+        );
+      }
 
       const queueId = await orchestrator.handleMessage(message);
 
