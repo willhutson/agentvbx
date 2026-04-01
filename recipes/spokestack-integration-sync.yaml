@@ -1,0 +1,76 @@
+name: integration-sync-notification
+description: Notify team when an external tool sync completes via Nango
+version: "1.0"
+trigger:
+  type: webhook
+  event: integration.sync.completed
+  source: spokestack-core
+
+variables:
+  provider: "{{ trigger.payload.provider }}"
+  provider_label: "{{ trigger.payload.providerLabel }}"
+  created: "{{ trigger.payload.syncResult.created }}"
+  updated: "{{ trigger.payload.syncResult.updated }}"
+  skipped: "{{ trigger.payload.syncResult.skipped }}"
+  errors: "{{ trigger.payload.syncResult.errors }}"
+  org_id: "{{ trigger.payload.organizationId }}"
+
+steps:
+  - id: format_message
+    type: transform
+    config:
+      template: |
+        🔄 *{{ provider_label }} Sync Complete*
+
+        {{ created }} new records imported
+        {{ updated }} records updated
+        {{ skipped }} unchanged
+
+        {% if errors | length > 0 %}
+        ⚠️ {{ errors | length }} errors occurred
+        {% endif %}
+
+  - id: get_admin
+    type: api_call
+    config:
+      method: GET
+      url: "{{ env.SPOKESTACK_CORE_URL }}/api/v1/members?role=OWNER"
+      headers:
+        X-API-Key: "{{ env.SPOKESTACK_API_KEY }}"
+        X-Org-Id: "{{ org_id }}"
+
+  - id: notify_admin
+    type: send_message
+    config:
+      channel: whatsapp
+      to: "{{ steps.get_admin.result[0].phone }}"
+      message: "{{ steps.format_message.result }}"
+    conditions:
+      - "{{ steps.get_admin.result[0].phone }}"
+
+  - id: notify_slack
+    type: send_message
+    config:
+      channel: slack
+      webhook: "{{ env.SLACK_WEBHOOK_URL }}"
+      message: "{{ steps.format_message.result }}"
+    conditions:
+      - "{{ env.SLACK_WEBHOOK_URL }}"
+
+marketplace:
+  id: recipe-integration-sync-notification-v1
+  creator: agentvbx
+  title: "Integration Sync Notification"
+  description: "Sends WhatsApp and Slack notifications when a Nango integration sync completes. Shows counts of created, updated, and skipped records."
+  category: operations
+  tags:
+    - nango
+    - sync
+    - notifications
+    - integrations
+    - operations
+  version: "1.0"
+  required_tools:
+    - spokestack
+  pricing:
+    type: free

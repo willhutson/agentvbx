@@ -313,6 +313,32 @@ npm run clean            # Remove all dist/ directories
 - **Queue**: Redis Streams with consumer groups (at-least-once delivery)
 - **CI/CD**: GitHub Actions (lint → test → build → Docker push to GHCR)
 
+## Communication Architecture
+
+SpokeStack has two complementary communication systems:
+
+### AgentVBX (this repo)
+- **What:** External channel orchestration
+- **Channels:** WhatsApp, Voice (Telnyx), SMS, Email
+- **Purpose:** Communicate with clients, team members who aren't in the SpokeStack UI, and external stakeholders
+- **How:** Recipe-driven workflows with human approval gates
+- **Users:** Anyone with a phone number or email
+
+### SpokeChat (Enterprise module in spokestack-modules)
+- **What:** Internal web-based team chat
+- **Channels:** Web UI only (channels, DMs, threads)
+- **Purpose:** Real-time team communication within the SpokeStack platform
+- **How:** WebSocket-based messaging with persistence
+- **Users:** SpokeStack platform users only
+
+### Key Boundary Rules
+- VBX does **not** handle SpokeChat messages
+- SpokeChat does **not** handle WhatsApp/Voice/SMS
+- Both can trigger notifications to each other:
+  - A SpokeChat message can trigger a VBX recipe (e.g., escalate to WhatsApp)
+  - A VBX incoming message can create a SpokeChat notification
+- They share the same Organization and User models from spokestack-core
+
 ## Roadmap
 
 - [x] Phase 1: Scaffold — monorepo, queue, router, recipe engine, tenant manager
