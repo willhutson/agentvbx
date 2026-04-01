@@ -28,7 +28,8 @@ export function orgSlugMiddleware(
   channel: string,
 ) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const slug = req.params.orgSlug;
+    const rawSlug = req.params.orgSlug;
+    const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
     if (!slug) {
       res.status(400).json({ error: 'Missing org slug' });
       return;

@@ -5,5 +5,5 @@
     "rootDir": "src"
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "tests", "node_modules"]
+  "exclude": ["dist", "tests", "node_modules", "src/widget/**/*"]
 }
